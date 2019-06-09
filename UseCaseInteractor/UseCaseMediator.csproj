@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <Version>0.1.0-beta1</Version>
+    <Version>0.1.1</Version>
     <PackageProjectUrl>https://github.com/madebykrol/UseCaseInteractor</PackageProjectUrl>
     <RepositoryUrl>https://github.com/madebykrol/UseCaseInteractor</RepositoryUrl>
-    <AssemblyVersion>0.1.0.1</AssemblyVersion>
+    <AssemblyVersion>0.1.1.2</AssemblyVersion>
   </PropertyGroup>
 
 </Project>

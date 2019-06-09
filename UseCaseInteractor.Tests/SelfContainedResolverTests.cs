@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
 using NUnit.Framework;
 using UseCaseMediator.Interactor;
+using UseCaseMediator.Notification;
 using UseCaseMediator.Resolver;
 using UseCaseMediator.Tests.Mocks;
 
@@ -49,6 +51,35 @@ namespace UseCaseMediator.Tests
             var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>();
 
             Assert.IsInstanceOf<MockInteractor>(resolvedInteractor);
+        }
+
+        [Test]
+        public void Can_Register_NotificationListener()
+        {
+            var listener = Substitute.For<INotificationListener<MockNotification>>();
+            _resolver.Register(listener);
+        }
+
+        [Test]
+        public void Can_Resolve_NotificationListener()
+        {
+            var listener = Substitute.For<INotificationListener<MockNotification>>();
+            _resolver.Register(listener);
+            var listeners = _resolver.ResolveListeners<MockNotification>();
+
+            Assert.That(listeners.Any());
+        }
+
+        [Test]
+        public void Can_Resolve_MultipleNotificationListener()
+        {
+            var listener = Substitute.For<INotificationListener<MockNotification>>();
+            var listener2 = Substitute.For<INotificationListener<MockNotification>>();
+            _resolver.Register(listener);
+            _resolver.Register(listener2);
+            var listeners = _resolver.ResolveListeners<MockNotification>();
+
+            Assert.That(listeners.Count() == 2);
         }
     }
 

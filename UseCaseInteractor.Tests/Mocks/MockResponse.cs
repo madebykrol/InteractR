@@ -2,5 +2,6 @@
 {
     public class MockResponse
     {
+        public bool HasBeenHandled { get; set; }
     }
 }

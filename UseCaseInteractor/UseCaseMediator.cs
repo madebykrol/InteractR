@@ -27,7 +27,7 @@ namespace UseCaseMediator
             {
                 if (!controller.Intercept(request))
                 {
-
+                    
                 }
             }
 
