@@ -16,7 +16,7 @@ namespace InteractorHub.Tests
         [Test]
         public void Can_Register_Interactor()
         {
-            var interactor = Substitute.For<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>();
+            var interactor = Substitute.For<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
             _resolver.Register(interactor);
         }
 
@@ -27,8 +27,8 @@ namespace InteractorHub.Tests
             _resolver.Register(interactor);
             Assert.DoesNotThrow(() =>
             {
-                var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>();
-                resolvedInteractor.Handle(new MockUseCaseRequest(), CancellationToken.None);
+                var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
+                resolvedInteractor.Handle(new MockInteractionRequest(), CancellationToken.None);
             });
         }
 
@@ -37,7 +37,7 @@ namespace InteractorHub.Tests
         {
             var interactor = new MockInteractor();
             _resolver.Register(interactor);
-            var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>();
+            var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
 
             Assert.IsInstanceOf<MockInteractor>(resolvedInteractor);
         }
@@ -72,9 +72,9 @@ namespace InteractorHub.Tests
         }
     }
 
-    public class MockInteractor : IUseCaseInteractor<MockUseCaseRequest, MockResponse>
+    public class MockInteractor : IUseCaseInteractor<MockInteractionRequest, MockResponse>
     {
-        public async Task<MockResponse> Handle(MockUseCaseRequest request, CancellationToken cancellationToken)
+        public async Task<MockResponse> Handle(MockInteractionRequest request, CancellationToken cancellationToken)
         {
             return new MockResponse();
         }

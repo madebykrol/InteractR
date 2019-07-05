@@ -8,7 +8,7 @@ namespace InteractorHub.Tests.DependencyInjectionContainers.Ninject
 
         private IKernel _kernel;
         private IUseCaseMediator _mediator;
-        private IUseCaseInteractor<MockUseCaseRequest, MockResponse> _useCaseInteractor;
+        private IUseCaseInteractor<MockInteractionRequest, MockResponse> _useCaseInteractor;
         private INotificationListener<MockNotification> _notificationListener1;
         private INotificationListener<MockNotification> _notificationListener2;
         private INotificationListener<MockNotification> _notificationListener3;
@@ -17,14 +17,14 @@ namespace InteractorHub.Tests.DependencyInjectionContainers.Ninject
         {
 
             _kernel = new StandardKernel();
-            _useCaseInteractor = Substitute.For<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>();
+            _useCaseInteractor = Substitute.For<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
             _notificationListener1 = Substitute.For<INotificationListener<MockNotification>>();
             _notificationListener2 = Substitute.For<INotificationListener<MockNotification>>();
             _notificationListener3 = Substitute.For<INotificationListener<MockNotification>>();
 
             _kernel.Bind<INotificationListener<MockNotification>>().ToMethod(context => _notificationListener1);
             _kernel.Bind<INotificationListener<MockNotification>>().ToMethod(context => _notificationListener1);
-            _kernel.Bind<IUseCaseInteractor<MockUseCaseRequest, MockResponse>>()
+            _kernel.Bind<IUseCaseInteractor<MockInteractionRequest, MockResponse>>()
                 .ToMethod(context => _useCaseInteractor);
 
             _mediator = new UseCaseMediator(new ByDelegateResolver(x => _kernel.Get(x)));
@@ -33,8 +33,8 @@ namespace InteractorHub.Tests.DependencyInjectionContainers.Ninject
         [Test]
         public async Task Test_Ninject_Resolver()
         {
-            await _mediator.Handle<MockResponse, MockUseCaseRequest>(new MockUseCaseRequest());
-            await _useCaseInteractor.Received().Handle(Arg.Any<MockUseCaseRequest>(), Arg.Any<CancellationToken>());
+            await _mediator.Handle<MockResponse, MockInteractionRequest>(new MockInteractionRequest());
+            await _useCaseInteractor.Received().Handle(Arg.Any<MockInteractionRequest>(), Arg.Any<CancellationToken>());
         }
 
         [Test]

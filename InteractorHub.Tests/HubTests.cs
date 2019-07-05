@@ -14,7 +14,7 @@ namespace InteractorHub.Tests
     {
         private IHub _useCaseMediator;
         private IResolver _handlerResolver;
-        private IInteractor<MockUseCaseRequest, MockResponse> _mockInteractor;
+        private IInteractor<MockInteractionRequest, MockResponse> _mockInteractor;
         private INotificationListener<MockNotification> _notificationListener1;
         private INotificationListener<MockNotification> _notificationListener2;
 
@@ -28,11 +28,11 @@ namespace InteractorHub.Tests
         [Test]
         public void TestQueryDispatcher()
         {
-            _mockInteractor = Substitute.For<IInteractor<MockUseCaseRequest, MockResponse>>();
-            _handlerResolver.ResolveInteractor<IInteractor<MockUseCaseRequest, MockResponse>>().Returns(_mockInteractor);
+            _mockInteractor = Substitute.For<IInteractor<MockInteractionRequest, MockResponse>>();
+            _handlerResolver.ResolveInteractor<IInteractor<MockInteractionRequest, MockResponse>>().Returns(_mockInteractor);
 
-            _useCaseMediator.Handle<MockResponse, MockUseCaseRequest>(new MockUseCaseRequest());
-            _mockInteractor.Received().Handle(Arg.Any<MockUseCaseRequest>(), Arg.Any<CancellationToken>());
+            _useCaseMediator.Handle<MockResponse, MockInteractionRequest>(new MockInteractionRequest());
+            _mockInteractor.Received().Handle(Arg.Any<MockInteractionRequest>(), Arg.Any<CancellationToken>());
         }
 
         [Test]

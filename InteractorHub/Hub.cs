@@ -17,7 +17,7 @@ namespace InteractorHub
             _resolver = resolver;
         }
 
-        public async Task<TResponse> Handle<TResponse, TRequest>(TRequest request) where TRequest : IUseCaseRequest<TResponse>
+        public async Task<TResponse> Handle<TResponse, TRequest>(TRequest request) where TRequest : IInteractionRequest<TResponse>
         {
             try
             {

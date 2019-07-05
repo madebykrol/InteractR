@@ -8,6 +8,6 @@ namespace InteractorHub.Resolver
     {
         void Register<TRequest>(IFlowController<TRequest> flowController);
         void Register<TNotification>(INotificationListener<TNotification> notificationListener) where TNotification : INotification;
-        void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor) where TRequest : IUseCaseRequest<TResponse>;
+        void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor) where TRequest : IInteractionRequest<TResponse>;
     }
 }

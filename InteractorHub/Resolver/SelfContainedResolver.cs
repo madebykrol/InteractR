@@ -59,7 +59,7 @@ namespace InteractorHub.Resolver
             _notificationListeners[typeof(TNotification)].Add(notificationListener);
         }
 
-        public void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor) where TRequest : IUseCaseRequest<TResponse>
+        public void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor) where TRequest : IInteractionRequest<TResponse>
         {
             if (_interactors.ContainsKey(typeof(IInteractor<TRequest, TResponse>)))
                 return;
