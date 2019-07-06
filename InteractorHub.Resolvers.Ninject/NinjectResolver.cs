@@ -2,21 +2,23 @@
 using System.Collections.Generic;
 using InteractorHub.Flow;
 using InteractorHub.Notification;
+using InteractorHub.Resolver;
+using Ninject;
 
-namespace InteractorHub.Resolver
+namespace InteractorHub.Resolvers.Ninject
 {
-    public class ByDelegateResolver : IResolver
+    public class NinjectResolver : IResolver
     {
-        private readonly Func<Type, object> _resolveFunc;
+        private readonly IKernel _kernel;
 
-
-        public ByDelegateResolver(Func<Type, object> resolveFunc)
+        public NinjectResolver(IKernel kernel)
         {
-            _resolveFunc = resolveFunc;
-        }
+            _kernel = kernel;
+        } 
+
         public TInteractor ResolveInteractor<TInteractor>()
         {
-            return (TInteractor)ResolveInteractor(typeof(TInteractor));
+            return Resolve<TInteractor>();
         }
 
         public object ResolveInteractor(Type interactorType)
@@ -26,22 +28,29 @@ namespace InteractorHub.Resolver
 
         public IEnumerable<INotificationListener<TNotification>> ResolveListeners<TNotification>() where TNotification : INotification
         {
-            return Resolve<IEnumerable<INotificationListener<TNotification>>>();
+            var notificationListeners = ResolveMultiple<INotificationListener<TNotification>>();
+
+            return notificationListeners;
         }
 
         public IEnumerable<IFlowController<TRequest>> ResolveFlowController<TRequest>()
         {
-            return Resolve<IEnumerable<IFlowController<TRequest>>>();
+            throw new NotImplementedException();
         }
 
         private T Resolve<T>()
         {
-            return (T)Resolve(typeof(T));
+            return _kernel.Get<T>();
         }
 
         private object Resolve(Type t)
         {
-            return _resolveFunc(t);
+            return _kernel.Get(t);
+        }
+
+        private IEnumerable<T> ResolveMultiple<T>()
+        {
+            return _kernel.GetAll<T>();
         }
     }
 }

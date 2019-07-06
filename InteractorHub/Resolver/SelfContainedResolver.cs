@@ -8,8 +8,7 @@ using InteractorHub.Notification;
 namespace InteractorHub.Resolver
 {
     public sealed class SelfContainedResolver : IResolver, IRegistrator
-    {
-
+    { 
         private readonly Dictionary<Type, object> _interactors = new Dictionary<Type, object>();
         private readonly Dictionary<Type, List<object>> _flowControllers = new Dictionary<Type, List<object>>();
         private readonly Dictionary<Type, List<object>> _notificationListeners = new Dictionary<Type, List<object>>();

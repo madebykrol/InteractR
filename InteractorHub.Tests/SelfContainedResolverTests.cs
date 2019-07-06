@@ -1,4 +1,12 @@
-﻿using InteractorHub.Tests.Mocks;
+﻿using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using InteractorHub.Interactor;
+using InteractorHub.Notification;
+using InteractorHub.Resolver;
+using InteractorHub.Tests.Mocks;
+using NSubstitute;
+using NUnit.Framework;
 
 namespace InteractorHub.Tests
 {
@@ -16,7 +24,7 @@ namespace InteractorHub.Tests
         [Test]
         public void Can_Register_Interactor()
         {
-            var interactor = Substitute.For<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
+            var interactor = Substitute.For<IInteractor<MockInteractionRequest, MockResponse>>();
             _resolver.Register(interactor);
         }
 
@@ -27,7 +35,7 @@ namespace InteractorHub.Tests
             _resolver.Register(interactor);
             Assert.DoesNotThrow(() =>
             {
-                var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
+                var resolvedInteractor = _resolver.ResolveInteractor<IInteractor<MockInteractionRequest, MockResponse>>();
                 resolvedInteractor.Handle(new MockInteractionRequest(), CancellationToken.None);
             });
         }
@@ -37,7 +45,7 @@ namespace InteractorHub.Tests
         {
             var interactor = new MockInteractor();
             _resolver.Register(interactor);
-            var resolvedInteractor = _resolver.ResolveInteractor<IUseCaseInteractor<MockInteractionRequest, MockResponse>>();
+            var resolvedInteractor = _resolver.ResolveInteractor<IInteractor<MockInteractionRequest, MockResponse>>();
 
             Assert.IsInstanceOf<MockInteractor>(resolvedInteractor);
         }
@@ -72,7 +80,7 @@ namespace InteractorHub.Tests
         }
     }
 
-    public class MockInteractor : IUseCaseInteractor<MockInteractionRequest, MockResponse>
+    public class MockInteractor : IInteractor<MockInteractionRequest, MockResponse>
     {
         public async Task<MockResponse> Handle(MockInteractionRequest request, CancellationToken cancellationToken)
         {

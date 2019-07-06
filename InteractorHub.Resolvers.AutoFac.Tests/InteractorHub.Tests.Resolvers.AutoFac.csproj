@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -8,15 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.9.2" />
-    <PackageReference Include="Ninject" Version="4.0.0-beta-0134" />
-    <PackageReference Include="NSubstitute" Version="4.0.0" />
     <PackageReference Include="nunit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InteractorHub.Resolvers.Ninject\InteractorHub.Resolvers.Ninject.csproj" />
+    <ProjectReference Include="..\InteractorHub.Resolver.AutoFac\InteractorHub.Resolvers.AutoFac.csproj" />
+    <ProjectReference Include="..\InteractorHub.Tests\InteractorHub.Tests.csproj" />
     <ProjectReference Include="..\InteractorHub\InteractorHub.csproj" />
   </ItemGroup>
 
