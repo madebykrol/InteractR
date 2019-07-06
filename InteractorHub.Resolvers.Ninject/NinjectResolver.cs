@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using InteractorHub.Flow;
 using InteractorHub.Notification;
+using InteractorHub.Pipeline;
 using InteractorHub.Resolver;
 using Ninject;
 
@@ -33,7 +33,7 @@ namespace InteractorHub.Resolvers.Ninject
             return notificationListeners;
         }
 
-        public IEnumerable<IFlowController<TRequest>> ResolveFlowController<TRequest>()
+        public IEnumerable<IPreInteractionMiddleware<TRequest>> ResolvePreInteractionMiddleWare<TRequest>()
         {
             throw new NotImplementedException();
         }

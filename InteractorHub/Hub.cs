@@ -19,22 +19,7 @@ namespace InteractorHub
 
         public async Task<TResponse> Handle<TResponse, TRequest>(TRequest request) where TRequest : IInteractionRequest<TResponse>
         {
-            try
-            {
-                var controllers = _resolver.ResolveFlowController<TRequest>();
-
-                foreach (var controller in controllers.OrderBy(x => x.Weight))
-                {
-                    if (!controller.Intercept(request))
-                    {
-
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                 
-            }
+           // Create pipeline.
 
             var result = await _resolver.ResolveInteractor<IInteractor<TRequest, TResponse>>().Handle(request, CancellationToken.None);
 

@@ -1,6 +1,6 @@
 ﻿using Ninject.Modules;
 
-namespace InteractorHub.Tests.DependencyInjectionContainers.Ninject
+namespace InteractorHub.Tests.Resolvers.Ninject
 {
     public class NinjectTestModule : NinjectModule
     {

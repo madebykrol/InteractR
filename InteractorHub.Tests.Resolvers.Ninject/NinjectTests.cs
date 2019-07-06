@@ -2,14 +2,13 @@
 using System.Threading.Tasks;
 using InteractorHub.Interactor;
 using InteractorHub.Notification;
-using InteractorHub.Resolver;
 using InteractorHub.Resolvers.Ninject;
 using InteractorHub.Tests.Mocks;
 using Ninject;
 using NSubstitute;
 using NUnit.Framework;
 
-namespace InteractorHub.Tests.DependencyInjectionContainers.Ninject
+namespace InteractorHub.Tests.Resolvers.Ninject
 {
     [TestFixture]
     public class NinjectTests

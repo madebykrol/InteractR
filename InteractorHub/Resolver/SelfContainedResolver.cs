@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using InteractorHub.Flow;
 using InteractorHub.Interactor;
 using InteractorHub.Notification;
+using InteractorHub.Pipeline;
 
 namespace InteractorHub.Resolver
 {
@@ -32,20 +32,20 @@ namespace InteractorHub.Resolver
                 : _notificationListeners[typeof(TNotification)].Select(x => (INotificationListener<TNotification>) x);
         }
 
-        public IEnumerable<IFlowController<TRequest>> ResolveFlowController<TRequest>()
+        public IEnumerable<IPreInteractionMiddleware<TRequest>> ResolvePreInteractionMiddleWare<TRequest>()
         {
             return !_flowControllers.ContainsKey(typeof(TRequest))
-                ? new List<IFlowController<TRequest>>() : _notificationListeners[typeof(TRequest)].Select(x => (IFlowController<TRequest>)x);
+                ? new List<IPreInteractionMiddleware<TRequest>>() : _notificationListeners[typeof(TRequest)].Select(x => (IPreInteractionMiddleware<TRequest>)x);
         }
 
-        public void Register<TRequest>(IFlowController<TRequest> flowController)
+        public void Register<TRequest>(IPreInteractionMiddleware<TRequest> preInteractionMiddleware)
         {
             if (!_flowControllers.ContainsKey(typeof(TRequest)))
             {
                 _flowControllers.Add(typeof(TRequest), new List<object>());
             }
 
-            _flowControllers[typeof(TRequest)].Add(flowController);
+            _flowControllers[typeof(TRequest)].Add(preInteractionMiddleware);
         }
 
         public void Register<TNotification>(INotificationListener<TNotification> notificationListener) where TNotification : INotification

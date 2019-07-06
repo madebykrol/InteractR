@@ -1,4 +1,4 @@
-﻿namespace InteractorHub.Flow
+﻿namespace InteractorHub.Pipeline
 {
     public interface IValidator<TCommand>
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using InteractorHub.Flow;
 using InteractorHub.Notification;
+using InteractorHub.Pipeline;
 
 namespace InteractorHub.Resolver
 {
@@ -11,6 +11,6 @@ namespace InteractorHub.Resolver
         object ResolveInteractor(Type interactorType);
         IEnumerable<INotificationListener<TNotification>> ResolveListeners<TNotification>()
             where TNotification : INotification;
-        IEnumerable<IFlowController<TRequest>> ResolveFlowController<TRequest>();
+        IEnumerable<IPreInteractionMiddleware<TRequest>> ResolvePreInteractionMiddleWare<TRequest>();
     }
 }

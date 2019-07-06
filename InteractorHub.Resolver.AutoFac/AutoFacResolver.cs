@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Autofac;
-using InteractorHub.Flow;
 using InteractorHub.Notification;
+using InteractorHub.Pipeline;
 using InteractorHub.Resolver;
 
 namespace InteractorHub.Resolvers.AutoFac
@@ -29,9 +29,9 @@ namespace InteractorHub.Resolvers.AutoFac
             return Resolve<IEnumerable<INotificationListener<TNotification>>>();
         }
 
-        public IEnumerable<IFlowController<TRequest>> ResolveFlowController<TRequest>()
+        public IEnumerable<IPreInteractionMiddleware<TRequest>> ResolvePreInteractionMiddleWare<TRequest>()
         {
-            return Resolve<IEnumerable<IFlowController<TRequest>>>();
+            return Resolve<IEnumerable<IPreInteractionMiddleware<TRequest>>>();
         }
 
         private T Resolve<T>()
