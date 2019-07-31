@@ -16,15 +16,9 @@ namespace InteractorHub.Resolvers.Ninject
             _kernel = kernel;
         } 
 
-        public TInteractor ResolveInteractor<TInteractor>()
-        {
-            return Resolve<TInteractor>();
-        }
+        public TInteractor ResolveInteractor<TInteractor>() => Resolve<TInteractor>();
 
-        public object ResolveInteractor(Type interactorType)
-        {
-            return Resolve(interactorType);
-        }
+        public object ResolveInteractor(Type interactorType) => Resolve(interactorType);
 
         public IEnumerable<INotificationListener<TNotification>> ResolveListeners<TNotification>() where TNotification : INotification
         {
@@ -35,22 +29,15 @@ namespace InteractorHub.Resolvers.Ninject
 
         public IEnumerable<IPreInteractionMiddleware<TRequest>> ResolvePreInteractionMiddleWare<TRequest>()
         {
-            throw new NotImplementedException();
+            var middleware = ResolveMultiple<IPreInteractionMiddleware<TRequest>>();
+
+            return middleware;
         }
 
-        private T Resolve<T>()
-        {
-            return _kernel.Get<T>();
-        }
+        private T Resolve<T>() =>  _kernel.Get<T>();
 
-        private object Resolve(Type t)
-        {
-            return _kernel.Get(t);
-        }
+        private object Resolve(Type t) => _kernel.Get(t);
 
-        private IEnumerable<T> ResolveMultiple<T>()
-        {
-            return _kernel.GetAll<T>();
-        }
+        private IEnumerable<T> ResolveMultiple<T>() => _kernel.GetAll<T>();
     }
 }

@@ -7,16 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="4.9.2" />
     <PackageReference Include="nunit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InteractorHub.Resolver.AutoFac\InteractorHub.Resolvers.AutoFac.csproj" />
+    <ProjectReference Include="..\..\InteractorHub\InteractorHub.csproj" />
+    <ProjectReference Include="..\..\Resolvers\InteractorHub.Resolvers.Ninject\InteractorHub.Resolvers.Ninject.csproj" />
     <ProjectReference Include="..\InteractorHub.Tests\InteractorHub.Tests.csproj" />
-    <ProjectReference Include="..\InteractorHub\InteractorHub.csproj" />
   </ItemGroup>
 
 </Project>

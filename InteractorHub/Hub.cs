@@ -19,7 +19,7 @@ namespace InteractorHub
 
         public async Task<TResponse> Handle<TResponse, TRequest>(TRequest request) where TRequest : IInteractionRequest<TResponse>
         {
-           // Create pipeline.
+            var middleware = _resolver.ResolvePreInteractionMiddleWare<TRequest>();
 
             var result = await _resolver.ResolveInteractor<IInteractor<TRequest, TResponse>>().Handle(request, CancellationToken.None);
 
@@ -32,6 +32,11 @@ namespace InteractorHub
             {
                 await listener.Handle(notification, CancellationToken.None);
             }
+        }
+
+        private void NextInPipeline<TRequest>(TRequest request)
+        {
+
         }
     }
 }

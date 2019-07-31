@@ -5,15 +5,15 @@ VisualStudioVersion = 16.0.28822.285
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InteractorHub", "InteractorHub\InteractorHub.csproj", "{7527C96C-E595-4405-A447-92D920EDD75C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InteractorHub.Tests", "InteractorHub.Tests\InteractorHub.Tests.csproj", "{4785A0FD-C255-4E39-8FC0-0AA168998BCF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InteractorHub.Tests", "Tests\InteractorHub.Tests\InteractorHub.Tests.csproj", "{4785A0FD-C255-4E39-8FC0-0AA168998BCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Resolvers.AutoFac", "InteractorHub.Resolver.AutoFac\InteractorHub.Resolvers.AutoFac.csproj", "{BE442F31-BBAE-43BB-9B19-C9F98185B380}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Resolvers.AutoFac", "Resolvers\InteractorHub.Resolvers.AutoFac\InteractorHub.Resolvers.AutoFac.csproj", "{BE442F31-BBAE-43BB-9B19-C9F98185B380}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Tests.Resolvers.AutoFac", "InteractorHub.Resolvers.AutoFac.Tests\InteractorHub.Tests.Resolvers.AutoFac.csproj", "{100E7664-5E75-4143-AED1-A768703BF900}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Tests.Resolvers.AutoFac", "Tests\InteractorHub.Tests.Resolvers.AutoFac\InteractorHub.Tests.Resolvers.AutoFac.csproj", "{100E7664-5E75-4143-AED1-A768703BF900}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Resolvers.Ninject", "InteractorHub.Resolvers.Ninject\InteractorHub.Resolvers.Ninject.csproj", "{BE4F074B-F7C5-4237-923B-1BB90BCAB25B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Resolvers.Ninject", "Resolvers\InteractorHub.Resolvers.Ninject\InteractorHub.Resolvers.Ninject.csproj", "{BE4F074B-F7C5-4237-923B-1BB90BCAB25B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Tests.Resolvers.Ninject", "InteractorHub.Tests.Resolvers.Ninject\InteractorHub.Tests.Resolvers.Ninject.csproj", "{A93D29C6-F6E9-4F67-A7A7-B957DD7D42D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractorHub.Tests.Resolvers.Ninject", "Tests\InteractorHub.Tests.Resolvers.Ninject\InteractorHub.Tests.Resolvers.Ninject.csproj", "{A93D29C6-F6E9-4F67-A7A7-B957DD7D42D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D11183B4-69FD-4720-BD4E-90EA0F03B753}"
 EndProject
