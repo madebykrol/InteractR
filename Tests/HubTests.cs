@@ -1,41 +1,34 @@
-using System.Collections.Generic;
 using System.Threading;
-using InteractorHub.Interactor;
-using InteractorHub.Resolver;
-using InteractorHub.Tests.Mocks;
+using InteractR.Interactor;
+using InteractR.Resolver;
+using InteractR.Tests.Mocks;
 using NSubstitute;
 using NUnit.Framework;
 
-namespace InteractorHub.Tests
+namespace InteractR.Tests
 {
     [TestFixture]
     public class HubTests
     {
-        private IInteractorHub _useCaseMediator;
+        private IInteractorHub _interactorHub;
         private IResolver _handlerResolver;
-        private IInteractor<MockInteractionRequest, MockResponse> _mockInteractor;
+        private IInteractor<MockUseCase, IMockOutputPort> _mockInteractor;
 
         [SetUp]
         public void Setup()
         {
             _handlerResolver = Substitute.For<IResolver>();
-            _useCaseMediator = new Hub(_handlerResolver);
+            _interactorHub = new Hub(_handlerResolver);
         }
 
         [Test]
-        public void TestQueryDispatcher()
+        public void UseCaseDispatcher()
         {
-            _mockInteractor = Substitute.For<IInteractor<MockInteractionRequest, MockResponse>>();
-            _handlerResolver.ResolveInteractor<IInteractor<MockInteractionRequest, MockResponse>>().Returns(_mockInteractor);
+            _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+            _handlerResolver.ResolveInteractor<MockUseCase, IMockOutputPort>(Arg.Any<MockUseCase>()).Returns(_mockInteractor);
 
-            _useCaseMediator.Execute<MockResponse, MockInteractionRequest>(new MockInteractionRequest());
-            _mockInteractor.Received().Handle(Arg.Any<MockInteractionRequest>(), Arg.Any<CancellationToken>());
-        }
-
-        [Test]
-        public void TestNotificationListener_Is_Triggered()
-        {
-
+            _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
+            _mockInteractor.Received().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>());
         }
     }
 }

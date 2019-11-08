@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using InteractorHub.Interactor;
+﻿using InteractR.Interactor;
 
-namespace InteractorHub.Resolver
+namespace InteractR.Resolver
 {
     public interface IRegistrator
     {
-
-        void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor)
-            where TRequest : IInteractionRequest<TResponse>;
+        void Register<TUseCase, TOutputPort>(IInteractor<TUseCase, TOutputPort> interactor)
+            where TUseCase : IUseCase<TOutputPort>;
     }
 }

@@ -1,10 +1,13 @@
-﻿using System.Threading;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace InteractorHub.Interactor
+namespace InteractR.Interactor
 {
-    public interface IInteractor<TRequest, TResponse> where TRequest : IInteractionRequest<TResponse>
+    public interface IInteractor<in TUseCase, in TOutputPort> where TUseCase : IUseCase<TOutputPort>
     {
-        Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken);
+        Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, CancellationToken cancellationToken);
     }
 }

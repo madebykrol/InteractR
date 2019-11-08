@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <Folder Include="DependencyInjectionContainers\Ninject\" />
-    <Folder Include="Pipeline\" />
   </ItemGroup>
 
   <ItemGroup>

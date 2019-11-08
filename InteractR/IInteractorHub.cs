@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
-using InteractorHub.Interactor;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using InteractR.Interactor;
 
-namespace InteractorHub
+namespace InteractR
 {
     public interface IInteractorHub
     {
-        Task<TResponse> Execute<TResponse, TRequest>(TRequest query) where TRequest : IInteractionRequest<TResponse>;
+        Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort) where TUseCase : IUseCase<TOutputPort>;
+        Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort, CancellationToken cancellationToken) where TUseCase : IUseCase<TOutputPort>;
     }
 }

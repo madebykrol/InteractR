@@ -3,10 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <Version>0.1.2</Version>
-    <PackageProjectUrl>https://github.com/madebykrol/UseCaseInteractor</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/madebykrol/UseCaseInteractor</RepositoryUrl>
-    <AssemblyVersion>0.1.1.2</AssemblyVersion>
+    <Version>1.0.0</Version>
+    <PackageProjectUrl>https://github.com/madebykrol/InteractR</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/madebykrol/InteractR</RepositoryUrl>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Description>Use case interactor.</Description>
   </PropertyGroup>
 
 </Project>

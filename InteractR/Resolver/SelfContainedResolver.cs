@@ -1,34 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using InteractorHub.Interactor;
+using InteractR.Interactor;
 
-namespace InteractorHub.Resolver
+namespace InteractR.Resolver
 {
     public sealed class SelfContainedResolver : IResolver, IRegistrator
     { 
         private readonly Dictionary<Type, object> _interactors = new Dictionary<Type, object>();
-        private readonly Dictionary<Type, List<object>> _flowControllers = new Dictionary<Type, List<object>>();
-        private readonly Dictionary<Type, List<object>> _notificationListeners = new Dictionary<Type, List<object>>();
 
-        public TInteractor ResolveInteractor<TInteractor>()
+        public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
         {
-            return (TInteractor) ResolveInteractor(typeof(TInteractor));
+            return (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
         }
 
-        public object ResolveInteractor(Type interactorType)
+        private object ResolveInteractor(Type interactorType)
         {
             return !_interactors.ContainsKey(interactorType) 
                 ? null 
                 : _interactors[interactorType];
         }
 
-        public void Register<TRequest, TResponse>(IInteractor<TRequest, TResponse> interactor) where TRequest : IInteractionRequest<TResponse>
+        public void Register<TUseCase, TOutputPort>(IInteractor<TUseCase, TOutputPort> interactor) where TUseCase : IUseCase<TOutputPort>
         {
-            if (_interactors.ContainsKey(typeof(IInteractor<TRequest, TResponse>)))
+            if (_interactors.ContainsKey(typeof(IInteractor<TUseCase, TOutputPort>)))
                 return;
 
-            _interactors.Add(typeof(IInteractor<TRequest, TResponse>), interactor);
+            _interactors.Add(typeof(IInteractor<TUseCase, TOutputPort>), interactor);
         }
+
     }
 }

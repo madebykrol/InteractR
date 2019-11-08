@@ -1,11 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using InteractorHub.Interactor;
-using InteractorHub.Resolver;
+using InteractR.Interactor;
+using InteractR.Resolver;
 
-namespace InteractorHub
+namespace InteractR
 {
     public sealed class Hub : IInteractorHub
     {
@@ -16,11 +14,10 @@ namespace InteractorHub
             _resolver = resolver;
         }
 
-        public async Task<TResponse> Execute<TResponse, TRequest>(TRequest request) where TRequest : IInteractionRequest<TResponse>
-        {
-            var result = await _resolver.ResolveInteractor<IInteractor<TRequest, TResponse>>().Handle(request, CancellationToken.None);
+        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort) where TUseCase : IUseCase<TOutputPort>
+            => Execute(useCase, outputPort, CancellationToken.None);
 
-            return result;
-        }
+        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort, CancellationToken cancellationToken) where TUseCase : IUseCase<TOutputPort>
+            => _resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase).Execute(useCase, outputPort, cancellationToken);
     }
 }

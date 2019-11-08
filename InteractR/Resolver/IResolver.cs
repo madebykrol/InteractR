@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
+using InteractR.Interactor;
 
-namespace InteractorHub.Resolver
+namespace InteractR.Resolver
 {
     public interface IResolver
     {
-        TInteractor ResolveInteractor<TInteractor>();
-        object ResolveInteractor(Type interactorType);
+        IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase)
+            where TUseCase : IUseCase<TOutputPort>;
     }
 }
