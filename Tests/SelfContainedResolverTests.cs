@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using InteractorHub.Interactor;
-using InteractorHub.Notification;
 using InteractorHub.Resolver;
 using InteractorHub.Tests.Mocks;
 using NSubstitute;
@@ -48,35 +47,6 @@ namespace InteractorHub.Tests
             var resolvedInteractor = _resolver.ResolveInteractor<IInteractor<MockInteractionRequest, MockResponse>>();
 
             Assert.IsInstanceOf<MockInteractor>(resolvedInteractor);
-        }
-
-        [Test]
-        public void Can_Register_NotificationListener()
-        {
-            var listener = Substitute.For<INotificationListener<MockNotification>>();
-            _resolver.Register(listener);
-        }
-
-        [Test]
-        public void Can_Resolve_NotificationListener()
-        {
-            var listener = Substitute.For<INotificationListener<MockNotification>>();
-            _resolver.Register(listener);
-            var listeners = _resolver.ResolveListeners<MockNotification>();
-
-            Assert.That(listeners.Any());
-        }
-
-        [Test]
-        public void Can_Resolve_MultipleNotificationListener()
-        {
-            var listener = Substitute.For<INotificationListener<MockNotification>>();
-            var listener2 = Substitute.For<INotificationListener<MockNotification>>();
-            _resolver.Register(listener);
-            _resolver.Register(listener2);
-            var listeners = _resolver.ResolveListeners<MockNotification>();
-
-            Assert.That(listeners.Count() == 2);
         }
     }
 

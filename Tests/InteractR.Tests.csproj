@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\InteractorHub\InteractorHub.csproj" />
+    <ProjectReference Include="..\InteractR\InteractR.csproj" />
   </ItemGroup>
 
 </Project>
