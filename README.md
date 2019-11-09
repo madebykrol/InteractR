@@ -2,8 +2,48 @@
 [![Build Status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/Interactor-CI?branchName=master)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=7&branchName=master)
 
 ## Usage
+Usecase
+
 ```csharp
-await _interactorHub.Execute(new MyNamedUseCase(), _outputPort);
+class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
+	public readonly string Name;
+	public GreetUseCase(input) {
+		if(string.IsNullOrEmpty(name)
+			throw new ArgumentException();
+			
+		Name = name;
+	}
+}
+```
+
+Interactor
+
+```csharp
+class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort> 
+{
+	public Task<UseCaseResult> Execute(GreetUseCase useCase, IGreetUseCaseOutputPort outputPort, CancellationToken cancellationToken)
+	{
+		outputPort.DisplayMessage($"Hello, {useCase.Name}");
+		
+		return Task.FromResult(new UseCaseResult(true));
+	}
+}
+```
+
+OutputPort 
+
+```csharp
+ConsoleOutputPort : IGreetUseCaseOutputPort {
+	public void DisplayMessage(string message) {
+		Console.WriteLine(message);
+	}
+}
+```
+
+Usage
+
+```csharp
+await _interactorHub.Execute(new GreetUseCase("John Doe"), _outputPort);
 ```
 
 ## Resolvers
