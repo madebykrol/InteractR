@@ -43,6 +43,14 @@ public class ConsoleOutput : IGreetUseCaseOutputPort {
 Usage
 
 ```csharp
+
+// Registration
+_resolver = new SelfContainedResolver();
+_resolver.Register(new GreetUseCaseInteractor());
+
+_interactorHub = new Hub(_resolver);
+
+
 _console = new ConsoleOutput();
 await _interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) ConsoleOutput);
 // Would display Hello, John Doe in a console application.
@@ -55,5 +63,6 @@ Ninject - [InteractR.Resolver.Ninject](https://github.com/madebykrol/InteractR.R
 
 ## Roadmap
 - [x] Execute Use Case Interactor.
-- [ ] Support for "Feature Flags".
-- [ ] Add more "Dependency Injection Container" Resolvers
+- [ ] "Assembly scan" resolver that will auto register interactors in the assemblies.
+- [ ] Support for pipelines to enable feature flagging / feature toggling.
+- [ ] Add more "Dependency Injection Container" Resolvers.
