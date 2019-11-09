@@ -1,7 +1,7 @@
 # InteractR
 [![Build Status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/Interactor-CI?branchName=master)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=7&branchName=master)
 
-** Inspired by the ideas from "clean architecture" and MediatR. **
+**Inspired by the ideas from "clean architecture" and MediatR.**
 
 InteractR is used as a way to create a clean separation between the client and the domain / business logic.
 
@@ -35,7 +35,8 @@ class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort
 }
 ```
 
-OutputPort 
+Usage Console App
+
 
 ```csharp
 public class ConsoleOutput : IGreetUseCaseOutputPort {
@@ -44,8 +45,6 @@ public class ConsoleOutput : IGreetUseCaseOutputPort {
 	}
 }
 ```
-
-Usage
 
 ```csharp
 
@@ -59,6 +58,44 @@ var console = new ConsoleOutput();
 
 await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) console);
 // Would display Hello, John Doe in a console application.
+```
+
+Usage MVC
+
+```csharp
+public class GreetingPagePresenter : IGreetUseCaseOutputPort, IGreetingPagePresenter {
+
+	private string _greeting;
+
+	public void DisplayGreeting(string message) {
+		_greeting = message;
+	}
+
+	...
+
+	public GreetingPageViewModel Present() {
+		var viewModel = new GreetingPageViewModel();
+		viewModel.Greeting = _greeting;
+
+		return viewModel;
+	}
+}
+```
+
+
+```csharp
+
+// Registration
+var resolver = new SelfContainedResolver();
+resolver.Register(new GreetUseCaseInteractor());
+
+var interactorHub = new Hub(_resolver);
+
+var presenter = new GreetingPagePresenter();
+
+await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) presenter);
+
+return View(presenter.Present());
 ```
 
 ## Resolvers
