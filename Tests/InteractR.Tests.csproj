@@ -15,10 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DependencyInjectionContainers\Ninject\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\InteractR\InteractR.csproj" />
   </ItemGroup>
 
