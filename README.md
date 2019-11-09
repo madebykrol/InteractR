@@ -52,7 +52,7 @@ var interactorHub = new Hub(_resolver);
 
 var console = new ConsoleOutput();
 
-await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) ConsoleOutput);
+await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) console);
 // Would display Hello, John Doe in a console application.
 ```
 
