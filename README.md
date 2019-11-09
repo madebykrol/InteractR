@@ -45,14 +45,14 @@ Usage
 ```csharp
 
 // Registration
-_resolver = new SelfContainedResolver();
-_resolver.Register(new GreetUseCaseInteractor());
+var resolver = new SelfContainedResolver();
+resolver.Register(new GreetUseCaseInteractor());
 
-_interactorHub = new Hub(_resolver);
+var interactorHub = new Hub(_resolver);
 
+var console = new ConsoleOutput();
 
-_console = new ConsoleOutput();
-await _interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) ConsoleOutput);
+await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) ConsoleOutput);
 // Would display Hello, John Doe in a console application.
 ```
 
