@@ -23,7 +23,7 @@ class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort
 {
 	public Task<UseCaseResult> Execute(GreetUseCase useCase, IGreetUseCaseOutputPort outputPort, CancellationToken cancellationToken)
 	{
-		outputPort.DisplayMessage($"Hello, {useCase.Name}");
+		outputPort.DisplayGreeting($"Hello, {useCase.Name}");
 		
 		return Task.FromResult(new UseCaseResult(true));
 	}
@@ -33,8 +33,8 @@ class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort
 OutputPort 
 
 ```csharp
-ConsoleOutputPort : IGreetUseCaseOutputPort {
-	public void DisplayMessage(string message) {
+public class ConsoleOutput : IGreetUseCaseOutputPort {
+	public void DisplayGreeting(string message) {
 		Console.WriteLine(message);
 	}
 }
@@ -43,7 +43,9 @@ ConsoleOutputPort : IGreetUseCaseOutputPort {
 Usage
 
 ```csharp
-await _interactorHub.Execute(new GreetUseCase("John Doe"), _outputPort);
+_console = new ConsoleOutput();
+await _interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) ConsoleOutput);
+// Would display Hello, John Doe in a console application.
 ```
 
 ## Resolvers
