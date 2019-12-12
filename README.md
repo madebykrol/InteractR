@@ -15,7 +15,7 @@ Usecase
 
 ```csharp
 class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
-	public readonly string Name;
+	public string Name {get;}
 	public GreetUseCase(input) {
 		if(string.IsNullOrEmpty(name)
 			throw new ArgumentException();
