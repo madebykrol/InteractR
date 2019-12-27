@@ -1,0 +1,16 @@
+﻿[*.cs]
+
+# CA1501: Avoid excessive inheritance
+dotnet_diagnostic.CA1501.severity = error
+
+# CA1502: Avoid excessive complexity
+dotnet_diagnostic.CA1502.severity = error
+
+# CA1505: Avoid unmaintainable code
+dotnet_diagnostic.CA1505.severity = error
+
+# CA1506: Avoid excessive class coupling
+dotnet_diagnostic.CA1506.severity = error
+
+# CA1508: Avoid dead conditional code
+dotnet_diagnostic.CA1508.severity = error

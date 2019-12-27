@@ -2,7 +2,7 @@
 {
     public class UseCaseResult
     {
-        public readonly bool Success;
+        public bool Success { get; }
 
         public UseCaseResult(bool success)
         {

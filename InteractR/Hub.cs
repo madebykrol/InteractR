@@ -18,6 +18,14 @@ namespace InteractR
             => Execute(useCase, outputPort, CancellationToken.None);
 
         public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort, CancellationToken cancellationToken) where TUseCase : IUseCase<TOutputPort>
-            => _resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase).Execute(useCase, outputPort, cancellationToken);
+        {
+            var pipeline = _resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase);
+
+            var interactor = _resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase);
+
+            var interactorMiddleware = new InteractorMiddlewareWrapper<TUseCase, TOutputPort>(interactor, outputPort);
+
+            return interactor.Execute(useCase, outputPort, cancellationToken);
+        }
     }
 }
