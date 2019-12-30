@@ -7,17 +7,26 @@ namespace InteractR.Resolver
     public sealed class SelfContainedResolver : IResolver, IRegistrator
     { 
         private readonly Dictionary<Type, object> _interactors = new Dictionary<Type, object>();
+        private readonly Dictionary<Type, IList<object>> _pipeline = new Dictionary<Type, IList<object>>();
 
-        public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
+        public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort> 
+            => (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
+
+        private object ResolveInteractor(Type interactorType) =>
+            _interactors.ContainsKey(interactorType)
+                ? _interactors[interactorType]
+                : null;
+
+        public IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
         {
-            return (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
+            return (IReadOnlyList<IMiddleware<TUseCase, TOutputPort>>)ResolveMiddleware(typeof(TUseCase)) ?? new List<IMiddleware<TUseCase, TOutputPort>>();
         }
 
-        private object ResolveInteractor(Type interactorType)
+        private object ResolveMiddleware(Type useCase)
         {
-            return !_interactors.ContainsKey(interactorType) 
-                ? null 
-                : _interactors[interactorType];
+            return _pipeline.ContainsKey(useCase)
+                ? _pipeline[useCase]
+                : null;
         }
 
         public void Register<TUseCase, TOutputPort>(IInteractor<TUseCase, TOutputPort> interactor) where TUseCase : IUseCase<TOutputPort>
@@ -28,5 +37,13 @@ namespace InteractR.Resolver
             _interactors.Add(typeof(IInteractor<TUseCase, TOutputPort>), interactor);
         }
 
+        public void Register<TUseCase, TOutputPort>(IMiddleware<TUseCase, TOutputPort> middleware) where TUseCase : IUseCase<TOutputPort>
+        {
+            var useCaseType = typeof(TUseCase);
+            if(!_pipeline.ContainsKey(useCaseType))
+                _pipeline[useCaseType] = new List<object>();
+
+            _pipeline[useCaseType].Add(middleware);
+        }
     }
 }

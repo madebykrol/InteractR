@@ -9,6 +9,6 @@ namespace InteractR.Interactor
     public interface IMiddleware<TUseCase, TOutputPort> 
         where TUseCase : IUseCase<TOutputPort>
     {
-        Task<UseCaseResult> Execute(TUseCase usecase, IMiddleware<TUseCase, TOutputPort> next, CancellationToken cancellationToken);
+        Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);
     }
 }

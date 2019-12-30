@@ -10,17 +10,15 @@ namespace InteractR.Interactor
         where TUseCase : IUseCase<TOutputPort>
     {
         private readonly IInteractor<TUseCase, TOutputPort> _interactor;
-        private readonly TOutputPort _outputPort;
 
-        public InteractorMiddlewareWrapper(IInteractor<TUseCase, TOutputPort> interactor, TOutputPort outputPort)
+        public InteractorMiddlewareWrapper(IInteractor<TUseCase, TOutputPort> interactor)
         {
             _interactor = interactor;
-            _outputPort = outputPort;
         }
 
-        public Task<UseCaseResult> Execute(TUseCase usecase, IMiddleware<TUseCase, TOutputPort> next, CancellationToken cancellationToken)
+        public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
         {
-            return _interactor.Execute(usecase, _outputPort, cancellationToken);
+            return _interactor.Execute(usecase, outputPort, cancellationToken);
         }
     }
 }

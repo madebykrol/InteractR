@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using InteractR.Interactor;
 using InteractR.Resolver;
 using InteractR.Tests.Mocks;
 using NSubstitute;
@@ -25,6 +26,18 @@ namespace InteractR.Tests
         }
 
         [Test]
+        public void Can_Register_Middleware()
+        {
+            _resolver.Register(Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>());
+        }
+
+        [Test]
+        public void Can_Resolve_Middleware()
+        {
+
+        }
+
+        [Test]
         public void CanResolve_Interactor_ByInterface()
         {
             var interactor = new MockInteractor();
@@ -35,7 +48,5 @@ namespace InteractR.Tests
                 resolvedInteractor.Execute(new MockUseCase(), new MockOutputPort(), CancellationToken.None);
             });
         }
-
     }
-
 }

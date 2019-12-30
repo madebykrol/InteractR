@@ -22,7 +22,7 @@ namespace InteractR.Tests
         }
 
         [Test]
-        public void TestQueryDispatcher()
+        public void TestUseCaseDispatcher()
         {
             _mockUseCaseInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
             _handlerResolver.Register(_mockUseCaseInteractor);
