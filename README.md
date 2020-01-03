@@ -17,7 +17,7 @@ PM > Install-Package InteractR -Version 2.0.0
 ```csharp
 class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
 	public string Name {get;}
-	public GreetUseCase(input) {
+	public GreetUseCase(name) {
 		if(string.IsNullOrEmpty(name)
 			throw new ArgumentException();
 			
