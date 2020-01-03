@@ -104,7 +104,7 @@ return View(presenter.Present());
 ```
 
 ## Howto: Pipeline
-InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if at all a interactor executes.
+InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if a interactor executes at all.
 
 Middleware can perform tasks related to a use case before an interactor executes or after, it can also terminate the pipeline. The letter might be usefull if for example some conditions are not met
 or a feature-flag is set to off.
