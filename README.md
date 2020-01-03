@@ -94,7 +94,7 @@ Registration and execution
 var resolver = new SelfContainedResolver();
 resolver.Register(new GreetUseCaseInteractor());
 
-var interactorHub = new Hub(_resolver);
+var interactorHub = new Hub(resolver);
 
 var presenter = new GreetingPagePresenter();
 
