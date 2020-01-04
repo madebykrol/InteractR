@@ -17,7 +17,7 @@ PM > Install-Package InteractR -Version 2.0.0
 ```csharp
 class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
 	public string Name {get;}
-	public GreetUseCase(input) {
+	public GreetUseCase(name) {
 		if(string.IsNullOrEmpty(name)
 			throw new ArgumentException();
 			
@@ -94,7 +94,7 @@ Registration and execution
 var resolver = new SelfContainedResolver();
 resolver.Register(new GreetUseCaseInteractor());
 
-var interactorHub = new Hub(_resolver);
+var interactorHub = new Hub(resolver);
 
 var presenter = new GreetingPagePresenter();
 
@@ -104,7 +104,7 @@ return View(presenter.Present());
 ```
 
 ## Howto: Pipeline
-InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if at all a interactor executes.
+InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if a interactor executes at all.
 
 Middleware can perform tasks related to a use case before an interactor executes or after, it can also terminate the pipeline. The letter might be usefull if for example some conditions are not met
 or a feature-flag is set to off.
@@ -141,6 +141,6 @@ StructureMap- [InteractR.Resolver.StructureMap](https://github.com/madebykrol/In
 ## Roadmap
 - [x] Execute Use Case Interactor.
 - [x] Support for pipelines to enable feature flagging / feature toggling.
-- [x] Global middleware pipeline
+- [x] Support for Global "Catch all" Middleware in a usecase pipeline
 - [ ] "Assembly scan" resolver that will auto register interactors in the assemblies.
 - [ ] Add more "Dependency Injection Container" Resolvers.
