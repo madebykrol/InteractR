@@ -10,5 +10,7 @@ namespace InteractR.Resolver
             where TUseCase : IUseCase<TOutputPort>;
         IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase)
             where TUseCase : IUseCase<TOutputPort>;
+
+        IReadOnlyList<IMiddleware> ResolveGlobalMiddleware();
     }
 }

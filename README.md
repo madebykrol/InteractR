@@ -141,5 +141,6 @@ StructureMap- [InteractR.Resolver.StructureMap](https://github.com/madebykrol/In
 ## Roadmap
 - [x] Execute Use Case Interactor.
 - [x] Support for pipelines to enable feature flagging / feature toggling.
+- [x] Global middleware pipeline
 - [ ] "Assembly scan" resolver that will auto register interactors in the assemblies.
 - [ ] Add more "Dependency Injection Container" Resolvers.

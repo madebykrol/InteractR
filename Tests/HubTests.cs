@@ -88,7 +88,10 @@ namespace InteractR.Tests
 
             IReadOnlyList<IMiddleware<MockUseCase, IMockOutputPort>> pipeline = new List<IMiddleware<MockUseCase, IMockOutputPort>> {middleware1, middleware2};
 
+           
+
             _handlerResolver.ResolveMiddleware<MockUseCase, IMockOutputPort>(Arg.Any<MockUseCase>()).Returns(pipeline);
+
 
             _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
 
@@ -129,6 +132,60 @@ namespace InteractR.Tests
             _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
 
             middleware2.ReceivedWithAnyArgs().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Test]
+        public void Global_Middleware_Executes()
+        {
+            _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+            _handlerResolver.ResolveInteractor<MockUseCase, IMockOutputPort>(Arg.Any<MockUseCase>()).Returns(_mockInteractor);
+
+            var globalMiddleware = Substitute.For<IMiddleware>();
+            globalMiddleware.Execute(
+                    Arg.Any<MockUseCase>(),
+                    d => Task.FromResult(new UseCaseResult(true)),
+                    Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(x => new UseCaseResult(true))
+                .AndDoes(x =>
+                {
+                    x.Arg<Func<MockUseCase, Task<UseCaseResult>>>().Invoke(x.Arg<MockUseCase>());
+                });
+            IReadOnlyList<IMiddleware> globalPipeline = new List<IMiddleware> { globalMiddleware };
+            _handlerResolver.ResolveGlobalMiddleware().Returns(globalPipeline);
+
+            _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
+
+            globalMiddleware.Received().Execute(
+                Arg.Any<MockUseCase>(), 
+                Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Test]
+        public void Global_Middleware_Terminates()
+        {
+            _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+            _handlerResolver.ResolveInteractor<MockUseCase, IMockOutputPort>(Arg.Any<MockUseCase>()).Returns(_mockInteractor);
+
+            var globalMiddleware = Substitute.For<IMiddleware>();
+            globalMiddleware.Execute(
+                    Arg.Any<MockUseCase>(),
+                    d => Task.FromResult(new UseCaseResult(true)),
+                    Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(x => new UseCaseResult(true))
+                .AndDoes(x =>
+                {
+                   
+                });
+            IReadOnlyList<IMiddleware> globalPipeline = new List<IMiddleware> { globalMiddleware };
+            _handlerResolver.ResolveGlobalMiddleware().Returns(globalPipeline);
+
+            _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
+
+            _mockInteractor.DidNotReceive().Execute(
+                Arg.Any<MockUseCase>(),
+                Arg.Any<MockOutputPort>(),
                 Arg.Any<CancellationToken>());
         }
 

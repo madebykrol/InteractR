@@ -9,5 +9,7 @@ namespace InteractR.Resolver
 
         void Register<TUseCase, TOutputPort>(IMiddleware<TUseCase, TOutputPort> middleware)
             where TUseCase : IUseCase<TOutputPort>;
+
+        void Register(IMiddleware middleware);
     }
 }
