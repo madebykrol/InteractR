@@ -14,7 +14,6 @@ namespace InteractR.Interactor
 
     public interface IMiddleware
     {
-        Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next,
-            CancellationToken cancellationToken);
+        Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);
     }
 }

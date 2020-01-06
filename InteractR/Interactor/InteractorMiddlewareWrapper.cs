@@ -16,9 +16,7 @@ namespace InteractR.Interactor
             _interactor = interactor;
         }
 
-        public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
-        {
-            return _interactor.Execute(usecase, outputPort, cancellationToken);
-        }
+        public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) 
+            => _interactor.Execute(usecase, outputPort, cancellationToken);
     }
 }

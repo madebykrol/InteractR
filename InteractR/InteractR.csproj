@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <PackageProjectUrl>https://github.com/madebykrol/InteractR</PackageProjectUrl>
     <RepositoryUrl>https://github.com/madebykrol/InteractR</RepositoryUrl>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <AssemblyVersion>2.1.1.0</AssemblyVersion>
     <NeutralLanguage>en</NeutralLanguage>
-    <Description>Use case interactor.</Description>
+    <Description>Simple indirection framework and mediator implementation inspired by the interactor pattern</Description>
     <Authors>Kristoffer Olsson</Authors>
     <Company>Kristoffer Olsson</Company>
   </PropertyGroup>

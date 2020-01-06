@@ -14,9 +14,7 @@ namespace InteractR.Interactor
         {
             _middleware = middleware;
         }
-        public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
-        {
-            return _middleware.Execute(usecase, next, cancellationToken);
-        }
+        public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) 
+            => _middleware.Execute(usecase, next, cancellationToken);
     }
 }
