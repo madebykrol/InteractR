@@ -1,6 +1,6 @@
-﻿using System.Threading;
+﻿using InteractR.Interactor;
+using System.Threading;
 using System.Threading.Tasks;
-using InteractR.Interactor;
 
 namespace InteractR
 {
