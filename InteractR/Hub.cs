@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using InteractR.Exceptions;
+using InteractR.Interactor;
+using InteractR.Resolver;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using InteractR.Exceptions;
-using InteractR.Interactor;
-using InteractR.Resolver;
 
 namespace InteractR
 {
@@ -17,11 +17,11 @@ namespace InteractR
             _resolver = resolver;
         }
 
-        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort) 
+        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort)
             where TUseCase : IUseCase<TOutputPort>
             => Execute(useCase, outputPort, CancellationToken.None);
 
-        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort, CancellationToken cancellationToken) 
+        public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort, CancellationToken cancellationToken)
             where TUseCase : IUseCase<TOutputPort>
         {
             if (useCase == null)
@@ -38,6 +38,7 @@ namespace InteractR
             var pipeline = new List<IMiddleware<TUseCase, TOutputPort>>();
 
             pipeline.AddRange(_resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase, TOutputPort>(x)));
+            pipeline.AddRange(_resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase, TOutputPort>(x)));
             pipeline.AddRange(_resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase).ToList());
 
             var pipelineRoot = pipeline.FirstOrDefault();
@@ -50,7 +51,7 @@ namespace InteractR
             pipeline.Add(new InteractorMiddlewareWrapper<TUseCase, TOutputPort>(interactor));
 
             var currentMiddleWare = 1;
-            Task<UseCaseResult> NextMiddleWare(TUseCase usecase) 
+            Task<UseCaseResult> NextMiddleWare(TUseCase usecase)
                 => pipeline[currentMiddleWare++].Execute(usecase, outputPort, NextMiddleWare, cancellationToken);
 
             return pipelineRoot.Execute(useCase, outputPort, NextMiddleWare, cancellationToken);

@@ -1,6 +1,5 @@
-﻿using System;
+﻿using InteractR.Interactor;
 using System.Collections.Generic;
-using InteractR.Interactor;
 
 namespace InteractR.Resolver
 {
@@ -11,6 +10,7 @@ namespace InteractR.Resolver
         IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase)
             where TUseCase : IUseCase<TOutputPort>;
 
+        IReadOnlyList<IMiddleware<TUseCase>> ResolveMiddleware<TUseCase>();
         IReadOnlyList<IMiddleware> ResolveGlobalMiddleware();
     }
 }

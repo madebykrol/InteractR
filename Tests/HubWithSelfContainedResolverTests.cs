@@ -25,6 +25,7 @@ namespace InteractR.Tests
         public void TestUseCaseDispatcher()
         {
             _mockUseCaseInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+            _handlerResolver.Register(new MockMiddleware());
             _handlerResolver.Register(_mockUseCaseInteractor);
             _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort(), CancellationToken.None);
             _mockUseCaseInteractor.Received().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>());

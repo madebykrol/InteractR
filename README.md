@@ -103,6 +103,9 @@ await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPo
 return View(presenter.Present());
 ```
 
+## UseCaseResult and IUseCaseFailure
+
+
 ## Howto: Pipeline
 InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if a interactor executes at all.
 
@@ -114,18 +117,74 @@ However as the OutputPort is part of the method signature the output methods can
 
 
 ### Register middleware
+
+You can register 3 types of middleware: Global, Generic and Specific.
+
+#### Global
+By implementing the ```IMiddleware``` interface you can register a middleware handler that is running for ALL usecases.  
+example for handling FeatureToggles
+
+```csharp
+public class FeatureToggleMiddleware : IMiddleware {
+
+	private reaodnly IFeatureTogglesService _featureTogglesService;
+
+	/// ...
+
+	public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
+	{
+		if (_featureTogglesService.OnFor(usecase))
+			return next.Invoke(usecase);
+
+		return new UseCaseResult(false, new List<IUseCaseFailure> {
+			new UseCaseFailure(UseCaseOffFailureCode, "Usecase Is turned off")
+		});
+	}
+}
+
+```
+
+#### Generic
+By implementing the ```IMiddleware<T>``` Interface you can register a middleware handler that is running for usecases with a generic type association.
+
+example for handling authorization policies.
+
+```csharp
+public class PolicyHandlerMiddleware : IMiddleware<IHasPolicy> {
+
+	private readonly IAuthorizationService _authorizationService;
+
+	/// ...
+
+	public async Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
+            where TUseCase : IHasPolicy 
+	{
+		var authResult = await _authorizationService.Authorize(usecase, usecase.Policy);
+		if (authResult.Succeeded)
+			return await next(usecase);
+
+		return new UseCaseResult(false, new List<IUseCaseFailure> {
+			new UseCaseFailure(UnauthorizedFailureCode, "failed to authorize user")
+		});
+	}
+}
+```
+
+#### Target specific usecase and outputport combination
+
 ```csharp
 public class FooMiddleware : IMiddleware<FooUseCase, IFooOutputPort> {
-	public  Task<UseCaseResult> Execute(FooUseCase usecase, IFooOutputPort outputPort, Func<FooUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) {
+	public Task<UseCaseResult> Execute(FooUseCase usecase, IFooOutputPort outputPort, Func<FooUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) {
 		// Do some stuff before interactor
 
-		next.Invoke(usecase); // remove this to terminate the pipeline.
+		return next.Invoke(usecase); // remove this to terminate the pipeline.
 
 		// Do some stuff after interactor
 	}
 }
 ```
 
+#### Register middleware
 ```csharp
 var resolver = new SelfContainedResolver();
 resolver.Register(new FooMiddleWare());
@@ -134,9 +193,10 @@ resolver.Register(new FooMiddleWare());
 Or you can register the middleware with any Dependency Injection Container and use either a provided resolver or roll your own.
 
 ## Resolvers
-Autofac - [InteractR.Resolver.Autofac](https://github.com/madebykrol/InteractR.Resolver.Autofac) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.AutoFac)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=11) <br />
-Ninject - [InteractR.Resolver.Ninject](https://github.com/madebykrol/InteractR.Resolver.Ninject) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.Ninject)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=10) <br />
-StructureMap- [InteractR.Resolver.StructureMap](https://github.com/madebykrol/InteractR.Resolver.StructureMap) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.StructureMap)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=12)
+Autofac - [InteractR.Resolver.Autofac](https://github.com/madebykrol/InteractR.Resolver.Autofac) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.AutoFac)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=11)  
+Ninject - [InteractR.Resolver.Ninject](https://github.com/madebykrol/InteractR.Resolver.Ninject) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.Ninject)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=10)  
+StructureMap - [InteractR.Resolver.StructureMap](https://github.com/madebykrol/InteractR.Resolver.StructureMap) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.StructureMap)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=12)  
+Lamar - [InteractR.Resolver.StructureMap](https://github.com/madebykrol/InteractR.Resolver.Lamar) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.Lamar)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=12)
 
 ## Roadmap
 - [x] Execute Use Case Interactor.
