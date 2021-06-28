@@ -1,13 +1,15 @@
 ﻿using InteractR.Interactor;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace InteractR.Resolver
 {
     public sealed class SelfContainedResolver : IResolver, IRegistrator
     {
-        private readonly Dictionary<Type, object> _interactors = new Dictionary<Type, object>();
-        private readonly Dictionary<Type, IList<object>> _pipeline = new Dictionary<Type, IList<object>>();
+        private readonly Dictionary<Type, object> _interactors = new();
+        private readonly Dictionary<Type, IList<object>> _pipeline = new();
+        private readonly Dictionary<Type, IList<object>> _middleware = new();
         private readonly IList<IMiddleware> _globalPipeline = new List<IMiddleware>();
 
         public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
@@ -19,11 +21,27 @@ namespace InteractR.Resolver
                 : null;
 
         public IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
-            => (IReadOnlyList<IMiddleware<TUseCase, TOutputPort>>)ResolveMiddleware(typeof(TUseCase)) ?? new List<IMiddleware<TUseCase, TOutputPort>>();
+        {
+            return ResolveMiddleware(typeof(TUseCase))?.Select(x => (IMiddleware<TUseCase, TOutputPort>)x).ToList() ??
+                   new List<IMiddleware<TUseCase, TOutputPort>>();
+        }
+
+        public IReadOnlyList<IMiddleware<TUseCase>> ResolveMiddleware<TUseCase>()
+        {
+            var middlewares = new List<IMiddleware<TUseCase>>();
+            var potentialMiddleware = _middleware.Where(x => x.Key.IsAssignableFrom(typeof(TUseCase)));
+
+            foreach (var d in potentialMiddleware)
+            {
+                middlewares.AddRange(d.Value.Select(x => (IMiddleware<TUseCase>) x));
+            }
+
+            return middlewares;
+        }
 
         public IReadOnlyList<IMiddleware> ResolveGlobalMiddleware() => (IReadOnlyList<IMiddleware>)_globalPipeline ?? new List<IMiddleware>();
 
-        private object ResolveMiddleware(Type useCase) =>
+        private IList<object> ResolveMiddleware(Type useCase) =>
             _pipeline.ContainsKey(useCase)
                 ? _pipeline[useCase]
                 : null;
@@ -43,6 +61,15 @@ namespace InteractR.Resolver
                 _pipeline[useCaseType] = new List<object>();
 
             _pipeline[useCaseType].Add(middleware);
+        }
+
+        public void Register<TUseCase>(IMiddleware<TUseCase> middleware)
+        {
+            var useCaseType = typeof(TUseCase);
+            if (!_middleware.ContainsKey(useCaseType))
+                _middleware[useCaseType] = new List<object>();
+
+            _middleware[useCaseType].Add(middleware);
         }
 
         public void Register(IMiddleware middleware)

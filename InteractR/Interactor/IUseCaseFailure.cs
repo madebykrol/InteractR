@@ -1,9 +1,12 @@
-﻿namespace InteractR.Interactor
+﻿using System;
+
+namespace InteractR.Interactor
 {
     public interface IUseCaseFailure
     {
-        string Title { get; }
-        string Description { get; }
-        int Status { get; }
+        string Code { get; }
+        string Details { get; }
+        public string Message { get; }
+        Exception CausingException { get; }
     }
 }

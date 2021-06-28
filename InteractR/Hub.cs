@@ -38,6 +38,7 @@ namespace InteractR
             var pipeline = new List<IMiddleware<TUseCase, TOutputPort>>();
 
             pipeline.AddRange(_resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase, TOutputPort>(x)));
+            pipeline.AddRange(_resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase, TOutputPort>(x)));
             pipeline.AddRange(_resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase).ToList());
 
             var pipelineRoot = pipeline.FirstOrDefault();
