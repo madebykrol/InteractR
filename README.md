@@ -133,7 +133,7 @@ public class FeatureToggleMiddleware : IMiddleware {
 
 	public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
 	{
-		if (_feaureTogglesService.OnFor(usecase))
+		if (_featureTogglesService.OnFor(usecase))
 			return next.Invoke(usecase);
 
 		return new UseCaseResult(false, new List<IUseCaseFailure> {
