@@ -7,7 +7,7 @@ InteractR is used as a way to create a clean separation between the client and t
 
 Install from nuget.
 ```PowerShell
-PM > Install-Package InteractR -Version 3.0.0
+PM > Install-Package InteractR -Version 3.0.1
 ```
 
 ## Howto: Interactor
