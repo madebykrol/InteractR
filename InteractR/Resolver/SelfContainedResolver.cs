@@ -15,10 +15,13 @@ namespace InteractR.Resolver
         public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
             => (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
 
-        private object ResolveInteractor(Type interactorType) =>
-            _interactors.ContainsKey(interactorType)
-                ? _interactors[interactorType]
-                : null;
+        private object ResolveInteractor(Type interactorType)
+        {
+            var d = _interactors.FirstOrDefault(x => interactorType.IsAssignableFrom(x.Key));
+
+            return d.Value;
+        }
+           
 
         public IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
         {

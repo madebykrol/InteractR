@@ -1,4 +1,4 @@
 ﻿namespace InteractR.Interactor
 {
-    public interface IUseCase<TOutputPort> { }
+    public interface IUseCase<in TOutputPort> { }
 }
