@@ -61,7 +61,7 @@ var interactorHub = new Hub(_resolver);
 
 var console = new ConsoleOutput();
 
-await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) console);
+await interactorHub.Execute(new GreetUseCase("John Doe"), console);
 // Would display Hello, John Doe in a console application.
 ```
 
@@ -98,7 +98,7 @@ var interactorHub = new Hub(resolver);
 
 var presenter = new GreetingPagePresenter();
 
-await interactorHub.Execute(new GreetUseCase("John Doe"), (IGreetUseCaseOutputPort) presenter);
+await interactorHub.Execute(new GreetUseCase("John Doe"), presenter);
 
 return View(presenter.Present());
 ```
