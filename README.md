@@ -7,7 +7,7 @@ InteractR is used as a way to create a clean separation between the client and t
 
 Install from nuget.
 ```PowerShell
-PM > Install-Package InteractR -Version 4.0.0
+PM > Install-Package InteractR -Version 5.0.0
 ```
 
 ## Howto: Interactor
@@ -18,8 +18,7 @@ PM > Install-Package InteractR -Version 4.0.0
 class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
 	public string Name {get;}
 	public GreetUseCase(name) {
-		if(string.IsNullOrEmpty(name)
-			throw new ArgumentException();
+		Guard.AgainstNullOrEmpty(name, nameof(name)); // Throw is name is null or empty
 			
 		Name = name;
 	}
