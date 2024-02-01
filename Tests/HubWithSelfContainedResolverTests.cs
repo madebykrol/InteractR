@@ -5,30 +5,29 @@ using InteractR.Tests.Mocks;
 using NSubstitute;
 using NUnit.Framework;
 
-namespace InteractR.Tests
+namespace InteractR.Tests;
+
+[TestFixture]
+public class HubWithSelfContainedResolverTests
 {
-    [TestFixture]
-    public class HubWithSelfContainedResolverTests
+    private IInteractorHub _interactorHub;
+    private SelfContainedResolver _handlerResolver;
+    private IInteractor<MockUseCase, IMockOutputPort> _mockUseCaseInteractor;
+
+    [SetUp]
+    public void Setup()
     {
-        private IInteractorHub _interactorHub;
-        private SelfContainedResolver _handlerResolver;
-        private IInteractor<MockUseCase, IMockOutputPort> _mockUseCaseInteractor;
+        _handlerResolver = new SelfContainedResolver();
+        _interactorHub = new Hub(_handlerResolver);
+    }
 
-        [SetUp]
-        public void Setup()
-        {
-            _handlerResolver = new SelfContainedResolver();
-            _interactorHub = new Hub(_handlerResolver);
-        }
-
-        [Test]
-        public void TestUseCaseDispatcher()
-        {
-            _mockUseCaseInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
-            _handlerResolver.Register(new MockMiddleware());
-            _handlerResolver.Register(_mockUseCaseInteractor);
-            _interactorHub.Execute(new MockUseCase(), new MockOutputPort(), CancellationToken.None);
-            _mockUseCaseInteractor.Received().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>());
-        }
+    [Test]
+    public void TestUseCaseDispatcher()
+    {
+        _mockUseCaseInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+        _handlerResolver.Register(new MockMiddleware());
+        _handlerResolver.Register(_mockUseCaseInteractor);
+        _interactorHub.Execute(new MockUseCase(), new MockOutputPort(), CancellationToken.None);
+        _mockUseCaseInteractor.Received().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>());
     }
 }

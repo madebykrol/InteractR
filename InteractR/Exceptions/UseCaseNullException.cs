@@ -1,24 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace InteractR.Exceptions
+namespace InteractR.Exceptions;
+
+public class UseCaseNullException : ArgumentException
 {
-    public class UseCaseNullException : ArgumentException
+    public UseCaseNullException()
     {
-        public UseCaseNullException()
-        {
             
-        }
+    }
 
-        public UseCaseNullException(string message) : base(message)
-        {
+    public UseCaseNullException(string message) : base(message)
+    {
             
-        }
+    }
 
-        public UseCaseNullException(string message, Exception innerException) : base(message, innerException)
-        {
+    public UseCaseNullException(string message, Exception innerException) : base(message, innerException)
+    {
             
-        }
     }
 }
