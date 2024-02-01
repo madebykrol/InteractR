@@ -1,20 +1,12 @@
 ﻿using System;
 
-namespace InteractR.Interactor
-{
-    public class UseCaseFailure : IUseCaseFailure
-    {
-        public string Code { get; }
-        public string Details { get; }
-        public string Message { get; }
-        public Exception CausingException { get; }
+namespace InteractR.Interactor;
 
-        public UseCaseFailure(string code, string details, string message = "", Exception causingException = null)
-        {
-            Code = code;
-            Details = details;
-            Message = message;
-            CausingException = causingException;
-        }
-    }
+public class UseCaseFailure(string code, string details, string message = "", Exception causingException = null)
+    : IUseCaseFailure
+{
+    public string Code { get; } = code;
+    public string Details { get; } = details;
+    public string Message { get; } = message;
+    public Exception CausingException { get; } = causingException;
 }

@@ -5,13 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using InteractR.Interactor;
 
-namespace InteractR.Tests.Mocks
+namespace InteractR.Tests.Mocks;
+
+public class MockInteractor : IInteractor<MockUseCase, IMockOutputPort>
 {
-    public class MockInteractor : IInteractor<MockUseCase, IMockOutputPort>
+    public Task<UseCaseResult> Execute(MockUseCase usecase, IMockOutputPort outputPort, CancellationToken cancellationToken)
     {
-        public Task<UseCaseResult> Execute(MockUseCase usecase, IMockOutputPort outputPort, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new UseCaseResult(true));
-        }
+        return Task.FromResult(new UseCaseResult(true));
     }
 }

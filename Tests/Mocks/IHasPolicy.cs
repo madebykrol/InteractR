@@ -1,7 +1,6 @@
-﻿namespace InteractR.Tests.Mocks
+﻿namespace InteractR.Tests.Mocks;
+
+public interface IHasPolicy
 {
-    public interface IHasPolicy
-    {
-        string Policy { get; }
-    }
+    string Policy { get; }
 }
