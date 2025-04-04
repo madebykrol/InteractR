@@ -8,8 +8,14 @@ using System.Threading.Tasks;
 
 namespace InteractR;
 
-public sealed class Hub(IResolver resolver) : IInteractorHub
+public sealed class Hub : IInteractorHub
 {
+    private readonly IResolver _resolver;
+    public Hub(IResolver resolver)
+    {
+        _resolver = resolver;
+    }
+
     public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort)
         where TUseCase : IUseCase<TOutputPort>
         => Execute(useCase, outputPort, CancellationToken.None);
@@ -27,15 +33,15 @@ public sealed class Hub(IResolver resolver) : IInteractorHub
             throw new OutputPortNullException("The output port cannot be null");
         }
 
-        var interactor = resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase);
+        var interactor = _resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase);
         var pipeline = new List<IMiddleware<TUseCase, TOutputPort>>();
 
         pipeline
-            .AddRange(resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase, TOutputPort>(x)));
+            .AddRange(_resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase, TOutputPort>(x)));
         pipeline
-            .AddRange(resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase, TOutputPort>(x)));
+            .AddRange(_resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase, TOutputPort>(x)));
         pipeline
-            .AddRange(resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase).ToList());
+            .AddRange(_resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase).ToList());
 
         var pipelineRoot = pipeline.FirstOrDefault();
 
@@ -51,5 +57,15 @@ public sealed class Hub(IResolver resolver) : IInteractorHub
             => pipeline[currentMiddleWare++].Execute(usecase, outputPort, NextMiddleWare, cancellationToken);
 
         return pipelineRoot.Execute(useCase, outputPort, NextMiddleWare, cancellationToken);
+    }
+
+    public Task<UseCaseResult> Run<TUseCase, TOutputPort>(in TUseCase useCase, in TOutputPort outputPort) where TUseCase : IUseCase<TOutputPort>
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public Task<UseCaseResult> Run<TUseCase, TOutputPort>(in TUseCase useCase, in TOutputPort outputPort, CancellationToken cancellationToken) where TUseCase : IUseCase<TOutputPort>
+    {
+        throw new System.NotImplementedException();
     }
 }
