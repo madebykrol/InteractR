@@ -5,11 +5,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using InteractR.Proxy;
 
 namespace InteractR;
 
-public sealed class Hub(IResolver resolver) : IInteractorHub
+public sealed class Hub : IInteractorHub
 {
+    private readonly IResolver _resolver;
+    public Hub(IResolver resolver)
+    {
+        _resolver = resolver;
+    }
     public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort)
         where TUseCase : IUseCase<TOutputPort>
         => Execute(useCase, outputPort, CancellationToken.None);
@@ -27,29 +33,32 @@ public sealed class Hub(IResolver resolver) : IInteractorHub
             throw new OutputPortNullException("The output port cannot be null");
         }
 
-        var interactor = resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase);
-        var pipeline = new List<IMiddleware<TUseCase, TOutputPort>>();
+        var interactor = _resolver.ResolveInteractor<TUseCase, TOutputPort>(useCase);
+        var pipeline = new List<IMiddleware<TUseCase>>();
 
         pipeline
-            .AddRange(resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase, TOutputPort>(x)));
+            .AddRange(_resolver.ResolveGlobalMiddleware().Select(x => new GlobalMiddlewareWrapper<TUseCase>(x)));
         pipeline
-            .AddRange(resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase, TOutputPort>(x)));
-        pipeline
-            .AddRange(resolver.ResolveMiddleware<TUseCase, TOutputPort>(useCase).ToList());
+            .AddRange(_resolver.ResolveMiddleware<TUseCase>().Select(x => new MiddlewareWrapper<TUseCase>(x)));
+        
 
         var pipelineRoot = pipeline.FirstOrDefault();
 
+        var d = OutputProxy<TOutputPort>.Create(outputPort);
+
         if (pipelineRoot == null)
         {
-            return interactor.Execute(useCase, outputPort, cancellationToken);
+            return interactor.Execute(useCase, d, cancellationToken);
         }
 
-        pipeline.Add(new InteractorMiddlewareWrapper<TUseCase, TOutputPort>(interactor));
+        pipeline.Add(new InteractorMiddlewareWrapper<TUseCase, TOutputPort>(interactor).SetOutputPort(d));
 
         var currentMiddleWare = 1;
         Task<UseCaseResult> NextMiddleWare(TUseCase usecase)
-            => pipeline[currentMiddleWare++].Execute(usecase, outputPort, NextMiddleWare, cancellationToken);
+        {
+            return pipeline[currentMiddleWare++].Execute(usecase, NextMiddleWare, cancellationToken);
+        }
 
-        return pipelineRoot.Execute(useCase, outputPort, NextMiddleWare, cancellationToken);
+        return pipelineRoot.Execute(useCase, NextMiddleWare, cancellationToken);
     }
 }

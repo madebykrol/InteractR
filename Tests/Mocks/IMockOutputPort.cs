@@ -6,4 +6,5 @@ namespace InteractR.Tests.Mocks;
 
 public interface IMockOutputPort
 {
+    void DisplayHello(string hello);
 }

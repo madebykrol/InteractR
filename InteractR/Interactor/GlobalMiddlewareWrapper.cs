@@ -4,10 +4,17 @@ using System.Threading.Tasks;
 
 namespace InteractR.Interactor;
 
-internal sealed class GlobalMiddlewareWrapper<TUseCase, TOutputPort>(IMiddleware middleware)
-    : IMiddleware<TUseCase, TOutputPort>
-    where TUseCase : IUseCase<TOutputPort>
+internal sealed class GlobalMiddlewareWrapper<TUseCaseIn>
+    : IMiddleware<TUseCaseIn>
 {
-    public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) 
-        => middleware.Execute(usecase, next, cancellationToken);
+    private readonly IMiddleware _middleware;
+
+    public GlobalMiddlewareWrapper(IMiddleware middleware)
+    {;
+        _middleware = middleware;
+    }
+
+    public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
+    where TUseCase : TUseCaseIn
+        => _middleware.Execute(usecase, next, cancellationToken);
 }

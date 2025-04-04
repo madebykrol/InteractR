@@ -18,9 +18,9 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     private object ResolveInteractor(Type interactorType)
         => _interactors.FirstOrDefault(x => interactorType.IsAssignableFrom(x.Key)).Value;
 
-    public IReadOnlyList<IMiddleware<TUseCase, TOutputPort>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort> =>
+    public IReadOnlyList<IMiddleware<TUseCase>> ResolveMiddleware<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort> =>
         ResolveMiddleware(typeof(TUseCase))?
-            .Select(x => (IMiddleware<TUseCase, TOutputPort>)x).ToList() ?? [];
+            .Select(x => (IMiddleware<TUseCase>)x).ToList() ?? new List<IMiddleware<TUseCase>>();
 
     public IReadOnlyList<IMiddleware<TUseCase>> ResolveMiddleware<TUseCase>()
     {
@@ -50,7 +50,7 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
         _interactors.Add(typeof(IInteractor<TUseCase, TOutputPort>), interactor);
     }
 
-    public void Register<TUseCase, TOutputPort>(IMiddleware<TUseCase, TOutputPort> middleware) where TUseCase : IUseCase<TOutputPort>
+    public void Register<TUseCase, TOutputPort>(IMiddleware<TUseCase> middleware) where TUseCase : IUseCase<TOutputPort>
     {
         var useCaseType = typeof(TUseCase);
         if (!_pipeline.ContainsKey(useCaseType))

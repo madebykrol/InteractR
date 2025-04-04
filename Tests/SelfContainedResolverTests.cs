@@ -30,8 +30,8 @@ public class SelfContainedResolverTests
     [Test]
     public void Can_Register_Middleware()
     {
-        _resolver.Register(Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>());
-        var middleware = _resolver.ResolveMiddleware<MockUseCase, IMockOutputPort>(new MockUseCase());
+        _resolver.Register(Substitute.For<IMiddleware<MockUseCase>>());
+        var middleware = _resolver.ResolveMiddleware<MockUseCase>();
 
         Assert.That(middleware != null);
     }

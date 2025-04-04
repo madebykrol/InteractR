@@ -22,6 +22,7 @@ public class HubTests
     {
         _handlerResolver = new SelfContainedResolver();
         _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
+        _mockInteractor.When(x => x.Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>())).Do(x => x.ArgAt<IMockOutputPort>(1).DisplayHello("Hello"));
         _handlerRegistrator = _handlerResolver as IRegistrator;
 
         _interactorHub = new Hub(_handlerResolver);
@@ -39,11 +40,10 @@ public class HubTests
     public void PipeLineTest_FirstMiddleWare_Executes()
     {
         _handlerRegistrator.Register(_mockInteractor);
-        var middleware1 = Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>();
+        var middleware1 = Substitute.For<IMiddleware<MockUseCase>>();
 
         middleware1.Execute(
-                Arg.Any<MockUseCase>(), 
-                Arg.Any<IMockOutputPort>(),
+                Arg.Any<MockUseCase>(),
                 d => Task.FromResult(new UseCaseResult(true)),
                 Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs(x => new UseCaseResult(true))
@@ -53,7 +53,7 @@ public class HubTests
 
         _interactorHub.Execute(new MockUseCase(), new MockOutputPort());
 
-        middleware1.ReceivedWithAnyArgs().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+        middleware1.ReceivedWithAnyArgs().Execute(Arg.Any<MockUseCase>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -62,21 +62,19 @@ public class HubTests
     {
         _handlerRegistrator.Register(_mockInteractor);
 
-        var middleware1 = Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>();
+        var middleware1 = Substitute.For<IMiddleware<MockUseCase>>();
 
         middleware1.Execute(
                 Arg.Any<MockUseCase>(),
-                Arg.Any<IMockOutputPort>(),
                 d => Task.FromResult( new UseCaseResult(true)), 
                 Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs( x => new UseCaseResult(true) )
             .AndDoes(x => x.Arg<Func<MockUseCase, Task<UseCaseResult>>>().Invoke(x.Arg<MockUseCase>()));
 
-        var middleware2 = Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>();
+        var middleware2 = Substitute.For<IMiddleware<MockUseCase>>();
 
         middleware2.Execute(
                 Arg.Any<MockUseCase>(),
-                Arg.Any<IMockOutputPort>(),
                 d => Task.FromResult(new UseCaseResult(true)),
                 Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs(x => new UseCaseResult(true))
@@ -85,10 +83,9 @@ public class HubTests
         _handlerRegistrator.Register(middleware1);
         _handlerRegistrator.Register(middleware2);
 
-
         _interactorHub.Execute(new MockUseCase(), new MockOutputPort());
 
-        middleware2.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+        middleware2.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -97,21 +94,19 @@ public class HubTests
     {
         _handlerRegistrator.Register(_mockInteractor);
 
-        var middleware1 = Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>();
+        var middleware1 = Substitute.For<IMiddleware<MockUseCase>>();
 
         middleware1.Execute(
                 Arg.Any<MockUseCase>(),
-                Arg.Any<IMockOutputPort>(),
                 d => Task.FromResult(new UseCaseResult(true)),
                 Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs(x => new UseCaseResult(true))
             .AndDoes(x => x.Arg<Func<MockUseCase, Task<UseCaseResult>>>().Invoke(x.Arg<MockUseCase>()));
 
-        var middleware2 = Substitute.For<IMiddleware<MockUseCase, IMockOutputPort>>();
+        var middleware2 = Substitute.For<IMiddleware<MockUseCase>>();
 
         middleware2.Execute(
                 Arg.Any<MockUseCase>(),
-                Arg.Any<IMockOutputPort>(),
                 d => Task.FromResult(new UseCaseResult(true)),
                 Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs(x => new UseCaseResult(true))
@@ -122,10 +117,10 @@ public class HubTests
 
         _interactorHub.Execute(new MockUseCase(), new MockOutputPort());
 
-        middleware1.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+        middleware1.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(),  Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
             Arg.Any<CancellationToken>());
 
-        middleware2.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
+        middleware2.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(),
             Arg.Any<CancellationToken>());
 
         _mockInteractor.ReceivedWithAnyArgs(1).Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(), Arg.Any<CancellationToken>());
@@ -149,7 +144,7 @@ public class HubTests
 
         _handlerRegistrator.Register(globalMiddleware);
 
-        _interactorHub.Execute(new MockUseCase(), new MockOutputPort());
+        _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
 
         globalMiddleware.Received().Execute(
             Arg.Any<MockUseCase>(), 
@@ -183,11 +178,11 @@ public class HubTests
     }
 
     [Test]
-    public void Interactor_Executes_WithoutPipeline()
+    public async Task Interactor_Executes_WithoutPipeline()
     {
         _handlerRegistrator.Register(_mockInteractor);
 
-        _interactorHub.Execute(new MockUseCase(), new MockOutputPort());
+        await _interactorHub.Execute(new MockUseCase(), (IMockOutputPort)new MockOutputPort());
 
         _mockInteractor.ReceivedWithAnyArgs().Execute(Arg.Any<MockUseCase>(), Arg.Any<IMockOutputPort>(),
             Arg.Any<CancellationToken>());
