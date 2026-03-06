@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using InteractR.Interactor;
 using InteractR.Resolver;
 using InteractR.Tests.Mocks;
-using NSubstitute;
-using NUnit.Framework;
 
 namespace InteractR.Tests;
 

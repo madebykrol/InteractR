@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net5;net6;net7;net8;net9</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net9;net10</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <Version>9.0.0</Version>
+    <Version>10.0.0</Version>
     <PackageProjectUrl>https://github.com/madebykrol/InteractR</PackageProjectUrl>
     <RepositoryUrl>https://github.com/madebykrol/InteractR</RepositoryUrl>
-    <AssemblyVersion>9.0.0.0</AssemblyVersion>
+    <AssemblyVersion>10.0.0.0</AssemblyVersion>
     <NeutralLanguage>en</NeutralLanguage>
     <Description>Simple indirection framework and mediator implementation inspired by the interactor pattern</Description>
     <Authors>Kristoffer Olsson</Authors>
