@@ -1,0 +1,158 @@
+{
+  "settings": {
+    "components": {
+      "code": false,
+      "binaries": false
+    },
+    "targetId": "net10.0",
+    "targetDisplayName": ".NETCoreApp,Version=v10.0"
+  },
+  "analysisStartTime": "2026-03-06T21:50:51.8173331Z",
+  "analysisEndTime": "2026-03-06T21:50:52.4060341Z",
+  "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2270980",
+  "stats": {
+    "summary": {
+      "projects": 2,
+      "issues": 1,
+      "incidents": 2,
+      "effort": 2
+    },
+    "charts": {
+      "severity": {
+        "Mandatory": 2,
+        "Optional": 0,
+        "Potential": 0,
+        "Information": 0
+      },
+      "category": {
+        "Project": 2
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "InteractR\\InteractR.csproj",
+      "startingProject": true,
+      "issues": 1,
+      "storyPoints": 1,
+      "properties": {
+        "appName": "InteractR",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "netstandard2.1",
+          "net9",
+          "net10"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 16,
+        "numberOfCodeFiles": 16,
+        "linesTotal": 342,
+        "linesOfCode": 342,
+        "totalApiScanned": 274,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "e9ba5f87-02e4-4498-82f6-963f21584757",
+          "ruleId": "Project.0002",
+          "projectPath": "InteractR\\InteractR.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: netstandard2.1;net9;net10\nRecommended target framework: netstandard2.1;net9;net10;net10.0",
+              "protected": "Current target framework: netstandard2.1;net9;net10\nRecommended target framework: netstandard2.1;net9;net10;net10.0"
+            },
+            "kind": "File",
+            "path": "InteractR\\InteractR.csproj",
+            "snippet": "Current target framework: netstandard2.1;net9;net10\nRecommended target framework: netstandard2.1;net9;net10;net10.0",
+            "protectedSnippet": "Current target framework: netstandard2.1;net9;net10\nRecommended target framework: netstandard2.1;net9;net10;net10.0",
+            "properties": {
+              "CurrentTargetFramework": "netstandard2.1;net9;net10",
+              "RecommendedTargetFramework": "netstandard2.1;net9;net10;net10.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    },
+    {
+      "path": "Tests\\InteractR.Tests.csproj",
+      "startingProject": true,
+      "issues": 1,
+      "storyPoints": 1,
+      "properties": {
+        "appName": "InteractR.Tests",
+        "projectKind": "ClassLibrary",
+        "frameworks": [
+          "net10"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 10,
+        "numberOfCodeFiles": 10,
+        "linesTotal": 370,
+        "linesOfCode": 370,
+        "totalApiScanned": 87,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "2ae5579e-5f2c-4041-8bcb-729a9131c85a",
+          "ruleId": "Project.0002",
+          "projectPath": "Tests\\InteractR.Tests.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: net10\nRecommended target framework: net10.0",
+              "protected": "Current target framework: net10\nRecommended target framework: net10.0"
+            },
+            "kind": "File",
+            "path": "Tests\\InteractR.Tests.csproj",
+            "snippet": "Current target framework: net10\nRecommended target framework: net10.0",
+            "protectedSnippet": "Current target framework: net10\nRecommended target framework: net10.0",
+            "properties": {
+              "CurrentTargetFramework": "net10",
+              "RecommendedTargetFramework": "net10.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    }
+  ],
+  "rules": {
+    "Project.0002": {
+      "id": "Project.0002",
+      "isFeature": false,
+      "description": "Project\u0027s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.\n\nDuring upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).",
+      "label": "Project\u0027s target framework(s) needs to be changed",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    }
+  }
+}
