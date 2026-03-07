@@ -10,6 +10,16 @@ public interface IMiddleware<TUseCase, in TOutputPort>
     Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);
 }
 
+public interface IOrderedMiddleware
+{
+    int Order { get; }
+}
+
+public interface IConditionalMiddleware<in TUseCase>
+{
+    bool ShouldExecute(TUseCase usecase);
+}
+
 public interface IMiddleware
 {
     Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);

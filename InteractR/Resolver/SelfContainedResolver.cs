@@ -1,4 +1,5 @@
-﻿using InteractR.Interactor;
+﻿using InteractR;
+using InteractR.Interactor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,10 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     private readonly Dictionary<Type, object> _interactors = new();
     private readonly Dictionary<Type, IList<object>> _pipeline = new();
     private readonly Dictionary<Type, IList<object>> _middleware = new();
+    private readonly Dictionary<Type, IList<object>> _notificationHandlers = new();
     private readonly IList<IMiddleware> _globalPipeline = new List<IMiddleware>();
+    private readonly IList<INotificationInlet> _notificationInlets = new List<INotificationInlet>();
+    private readonly IList<INotificationOutlet> _notificationOutlets = new List<INotificationOutlet>();
 
     public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
         => (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
@@ -36,6 +40,24 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     }
 
     public IReadOnlyList<IMiddleware> ResolveGlobalMiddleware() => (IReadOnlyList<IMiddleware>)_globalPipeline ?? new List<IMiddleware>();
+
+    public IReadOnlyList<INotificationHandler<TNotification>> ResolveNotificationHandlers<TNotification>()
+        where TNotification : INotification
+    {
+        var notificationType = typeof(TNotification);
+        if (!_notificationHandlers.ContainsKey(notificationType))
+        {
+            return [];
+        }
+
+        return _notificationHandlers[notificationType]
+            .Select(x => (INotificationHandler<TNotification>)x)
+            .ToList();
+    }
+
+    public IReadOnlyList<INotificationOutlet> ResolveNotificationOutlets() => (IReadOnlyList<INotificationOutlet>)_notificationOutlets;
+
+    public IReadOnlyList<INotificationInlet> ResolveNotificationInlets() => (IReadOnlyList<INotificationInlet>)_notificationInlets;
 
     private IList<object> ResolveMiddleware(Type useCase) =>
         _pipeline.ContainsKey(useCase)
@@ -66,6 +88,26 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
             _middleware[useCaseType] = new List<object>();
 
         _middleware[useCaseType].Add(middleware);
+    }
+
+    public void Register<TNotification>(INotificationHandler<TNotification> notificationHandler)
+        where TNotification : INotification
+    {
+        var notificationType = typeof(TNotification);
+        if (!_notificationHandlers.ContainsKey(notificationType))
+            _notificationHandlers[notificationType] = new List<object>();
+
+        _notificationHandlers[notificationType].Add(notificationHandler);
+    }
+
+    public void Register(INotificationOutlet outlet)
+    {
+        _notificationOutlets.Add(outlet);
+    }
+
+    public void Register(INotificationInlet inlet)
+    {
+        _notificationInlets.Add(inlet);
     }
 
     public void Register(IMiddleware middleware)

@@ -7,191 +7,216 @@ InteractR is used as a way to create a clean separation between the client and t
 
 Install from nuget.
 ```PowerShell
-PM > Install-Package InteractR -Version 9.0.0
+PM > Install-Package InteractR -Version 10.0.0
 ```
 
-## Howto: Interactor
+## Quick start: Use case + Interactor
 
-### Usecase
-
-```csharp
-class GreetUseCase : IUseCase<IGreetUseCaseOutputPort> {
-	public string Name {get;}
-	public GreetUseCase(name) {
-		Guard.AgainstNullOrEmpty(name, nameof(name)); // Throw is name is null or empty
-			
-		Name = name;
-	}
-}
-```
-
-### Interactor
+### 1) Define a use case and output port
 
 ```csharp
-class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort> 
+public interface IGreetUseCaseOutputPort
 {
-	public Task<UseCaseResult> Execute(GreetUseCase useCase, IGreetUseCaseOutputPort outputPort, CancellationToken cancellationToken)
-	{
-		outputPort.DisplayGreeting($"Hello, {useCase.Name}");
-		
-		return Task.FromResult(new UseCaseResult(true));
-	}
+    void DisplayGreeting(string message);
+}
+
+public sealed class GreetUseCase : IUseCase<IGreetUseCaseOutputPort>
+{
+    public GreetUseCase(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name cannot be empty", nameof(name));
+        }
+
+        Name = name;
+    }
+
+    public string Name { get; }
 }
 ```
 
-### Usage Console App
-
+### 2) Implement an interactor
 
 ```csharp
-public class ConsoleOutput : IGreetUseCaseOutputPort {
-	public void DisplayGreeting(string message) {
-		Console.WriteLine(message);
-	}
+public sealed class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUseCaseOutputPort>
+{
+    public Task<UseCaseResult> Execute(
+        GreetUseCase useCase,
+        IGreetUseCaseOutputPort outputPort,
+        CancellationToken cancellationToken)
+    {
+        outputPort.DisplayGreeting($"Hello, {useCase.Name}");
+        return Task.FromResult(new UseCaseResult(true));
+    }
 }
 ```
 
-```csharp
+### 3) Register and execute
 
-// Registration
+```csharp
+public sealed class ConsoleOutput : IGreetUseCaseOutputPort
+{
+    public void DisplayGreeting(string message) => Console.WriteLine(message);
+}
+
 var resolver = new SelfContainedResolver();
 resolver.Register(new GreetUseCaseInteractor());
 
-var interactorHub = new Hub(_resolver);
+var hub = new Hub(resolver);
+var output = new ConsoleOutput();
 
-var console = new ConsoleOutput();
-
-await interactorHub.Execute(new GreetUseCase("John Doe"), console);
-// Would display Hello, John Doe in a console application.
+await hub.Execute(new GreetUseCase("John Doe"), output);
+await hub.Run(new GreetUseCase("Jane Doe"), output);
 ```
 
-### Usage MVC
+## Pipeline examples
+
+InteractR supports global, generic, and use-case specific middleware.
+
+### Ordered middleware
+
+Implement `IOrderedMiddleware` to control execution order:
 
 ```csharp
-public class GreetingPagePresenter : IGreetUseCaseOutputPort, IGreetingPagePresenter {
+public sealed class AuditMiddleware : IMiddleware<GreetUseCase, IGreetUseCaseOutputPort>, IOrderedMiddleware
+{
+    public int Order => 10;
 
-	private string _greeting;
-
-	public void DisplayGreeting(string message) {
-		_greeting = message;
-	}
-
-	...
-
-	public GreetingPageViewModel Present() {
-		var viewModel = new GreetingPageViewModel();
-		viewModel.Greeting = _greeting;
-
-		return viewModel;
-	}
+    public Task<UseCaseResult> Execute(
+        GreetUseCase useCase,
+        IGreetUseCaseOutputPort outputPort,
+        Func<GreetUseCase, Task<UseCaseResult>> next,
+        CancellationToken cancellationToken)
+        => next(useCase);
 }
 ```
-Registration and execution
+
+### Conditional middleware
+
+Implement `IConditionalMiddleware<TUseCase>` to skip middleware when needed:
 
 ```csharp
+public sealed class FeatureToggleMiddleware : IMiddleware<GreetUseCase, IGreetUseCaseOutputPort>, IConditionalMiddleware<GreetUseCase>
+{
+    private readonly IFeatureFlags _featureFlags;
 
-// Registration
+    public FeatureToggleMiddleware(IFeatureFlags featureFlags)
+    {
+        _featureFlags = featureFlags;
+    }
+
+    public bool ShouldExecute(GreetUseCase useCase)
+        => _featureFlags.IsEnabled("greet");
+
+    public Task<UseCaseResult> Execute(
+        GreetUseCase useCase,
+        IGreetUseCaseOutputPort outputPort,
+        Func<GreetUseCase, Task<UseCaseResult>> next,
+        CancellationToken cancellationToken)
+        => next(useCase);
+}
+```
+
+## Notifications: in-process + out-of-process
+
+InteractR supports:
+
+- in-process handlers (`INotificationHandler<TNotification>`)
+- out-of-process outlets (`INotificationOutlet`) for event bus publishing
+- inbound adapters (`INotificationInlet`) registered as message sources
+- idempotent handling using `INotificationHandlingStore` (default: `InMemoryNotificationHandlingStore`)
+
+### Define and register notification handlers/outlets
+
+```csharp
+public sealed class UserRegistered : INotification
+{
+    public UserRegistered(Guid userId) => UserId = userId;
+
+    public Guid UserId { get; }
+}
+
+public sealed class WelcomeEmailHandler : INotificationHandler<UserRegistered>
+{
+    public Task Handle(UserRegistered notification, CancellationToken cancellationToken)
+    {
+        // Send email
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class BrokerOutlet : INotificationOutlet
+{
+    public Task Publish<TNotification>(PublishedNotification<TNotification> notification, CancellationToken cancellationToken)
+        where TNotification : INotification
+    {
+        // Push notification.MessageId + payload to broker
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class BrokerInlet : INotificationInlet
+{
+    public Task Start(INotificationIngress ingress, CancellationToken cancellationToken = default, PublishStrategy strategy = PublishStrategy.Sequential)
+    {
+        // Example broker callback:
+        // return ingress.Ingest(new PublishedNotification<UserRegistered>(payload, messageId, NotificationOrigin.OutOfProcess), cancellationToken, strategy);
+        return Task.CompletedTask;
+    }
+}
+
 var resolver = new SelfContainedResolver();
-resolver.Register(new GreetUseCaseInteractor());
+resolver.Register(new WelcomeEmailHandler());
+resolver.Register(new BrokerOutlet());
+resolver.Register(new BrokerInlet());
 
-var interactorHub = new Hub(resolver);
-
-var presenter = new GreetingPagePresenter();
-
-await interactorHub.Execute(new GreetUseCase("John Doe"), presenter);
-
-return View(presenter.Present());
+var hub = new Hub(resolver);
 ```
 
-## UseCaseResult and IUseCaseFailure
-
-
-## Howto: Pipeline
-InteractR supports a middleware pipeline from 2.0.0 that allowes developers to control the flow of what happends before, after or if a interactor executes at all.
-
-Middleware can perform tasks related to a use case before an interactor executes or after, it can also terminate the pipeline. The letter might be usefull if for example some conditions are not met
-or a feature-flag is set to off.
-
-As interactors don't produce a return model for what to be displayed, Middlewares cannot manipulate the output directly. 
-However as the OutputPort is part of the method signature the output methods can be called.
-
-
-### Register middleware
-
-You can register 3 types of middleware: Global, Generic and Specific.
-
-#### Global
-By implementing the ```IMiddleware``` interface you can register a middleware handler that is running for ALL usecases.  
-example for handling FeatureToggles
+### Publish from inside the process
 
 ```csharp
-public class FeatureToggleMiddleware : IMiddleware {
+await hub.Publish(new UserRegistered(Guid.NewGuid()));
+```
 
-	private reaodnly IFeatureTogglesService _featureTogglesService;
+This will:
+1. Run in-process handlers.
+2. Forward the same event (with message id) to registered outlets.
 
-	/// ...
+### Start inbound ingestion (broker -> inlet -> hub)
 
-	public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
-	{
-		if (_featureTogglesService.OnFor(usecase))
-			return next.Invoke(usecase);
+```csharp
+await hub.StartNotificationInlets(cancellationToken);
+```
 
-		return new UseCaseResult(false, new List<IUseCaseFailure> {
-			new UseCaseFailure(UseCaseOffFailureCode, "Usecase Is turned off")
-		});
-	}
+Inlets are source adapters. The hub ingests from all registered inlets, routes to in-process handlers, and does not re-publish out-of-process-origin notifications to outlets (prevents loops).
+
+## Pluggable idempotency store (inbox/outbox scenarios)
+
+Use a custom `INotificationHandlingStore` when you need durable deduplication (for example SQL/Redis):
+
+```csharp
+public sealed class SqlNotificationHandlingStore : INotificationHandlingStore
+{
+    public async Task<bool> TryMarkAsHandled(string notificationKey, CancellationToken cancellationToken)
+    {
+        // Insert key with unique constraint; return false if already exists
+        return await Task.FromResult(true);
+    }
+
+    public Task UnmarkAsHandled(string notificationKey, CancellationToken cancellationToken)
+    {
+        // Optional rollback/remove when publish fails
+        return Task.CompletedTask;
+    }
 }
 
+var hub = new Hub(resolver, new SqlNotificationHandlingStore());
 ```
-
-#### Generic
-By implementing the ```IMiddleware<T>``` Interface you can register a middleware handler that is running for usecases with a generic type association.
-
-example for handling authorization policies.
-
-```csharp
-public class PolicyHandlerMiddleware : IMiddleware<IHasPolicy> {
-
-	private readonly IAuthorizationService _authorizationService;
-
-	/// ...
-
-	public async Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
-            where TUseCase : IHasPolicy 
-	{
-		var authResult = await _authorizationService.Authorize(usecase, usecase.Policy);
-		if (authResult.Succeeded)
-			return await next(usecase);
-
-		return new UseCaseResult(false, new List<IUseCaseFailure> {
-			new UseCaseFailure(UnauthorizedFailureCode, "failed to authorize user")
-		});
-	}
-}
-```
-
-#### Target specific usecase and outputport combination
-
-```csharp
-public class FooMiddleware : IMiddleware<FooUseCase, IFooOutputPort> {
-	public Task<UseCaseResult> Execute(FooUseCase usecase, IFooOutputPort outputPort, Func<FooUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken) {
-		// Do some stuff before interactor
-
-		return next.Invoke(usecase); // remove this to terminate the pipeline.
-
-		// Do some stuff after interactor
-	}
-}
-```
-
-#### Register middleware
-```csharp
-var resolver = new SelfContainedResolver();
-resolver.Register(new FooMiddleWare());
-```
-
-Or you can register the middleware with any Dependency Injection Container and use either a provided resolver or roll your own.
 
 ## Resolvers
+
 Autofac - [InteractR.Resolver.Autofac](https://github.com/madebykrol/InteractR.Resolver.Autofac) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.AutoFac)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=11)  
 Ninject - [InteractR.Resolver.Ninject](https://github.com/madebykrol/InteractR.Resolver.Ninject) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.Ninject)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=10)  
 StructureMap - [InteractR.Resolver.StructureMap](https://github.com/madebykrol/InteractR.Resolver.StructureMap) [![Build status](https://dev.azure.com/kristofferolsson/Interactor/_apis/build/status/InteractR.Resolver.StructureMap)](https://dev.azure.com/kristofferolsson/Interactor/_build/latest?definitionId=12)  

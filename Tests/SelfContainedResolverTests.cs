@@ -60,4 +60,37 @@ public class SelfContainedResolverTests
             resolvedInteractor.Execute(new MockUseCase(), new MockOutputPort(), CancellationToken.None);
         });
     }
+
+    [Test]
+    public void Can_Register_And_Resolve_NotificationHandlers()
+    {
+        var notificationHandler = Substitute.For<INotificationHandler<MockNotification>>();
+        _resolver.Register(notificationHandler);
+
+        var handlers = _resolver.ResolveNotificationHandlers<MockNotification>();
+
+        Assert.That(handlers.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Can_Register_And_Resolve_NotificationOutlets()
+    {
+        var outlet = Substitute.For<INotificationOutlet>();
+        _resolver.Register(outlet);
+
+        var outlets = _resolver.ResolveNotificationOutlets();
+
+        Assert.That(outlets.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Can_Register_And_Resolve_NotificationInlets()
+    {
+        var inlet = Substitute.For<INotificationInlet>();
+        _resolver.Register(inlet);
+
+        var inlets = _resolver.ResolveNotificationInlets();
+
+        Assert.That(inlets.Count, Is.EqualTo(1));
+    }
 }
