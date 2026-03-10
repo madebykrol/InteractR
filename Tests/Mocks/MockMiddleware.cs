@@ -9,9 +9,9 @@ namespace InteractR.Tests.Mocks;
 public class MockMiddleware : IMiddleware<IHasPolicy>
 {
     private const string UnauthorizedFailureCode = "DERP";
-    public async Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
+    public async Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next, CancellationToken cancellationToken)
         where TUseCase : IHasPolicy
     {
-        return await next(usecase);
+        return await next(usecase, null);
     }
 }

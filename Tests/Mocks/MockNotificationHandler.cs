@@ -8,9 +8,9 @@ public sealed class MockNotificationHandler : INotificationHandler<MockNotificat
 {
     public bool Executed { get; private set; }
 
-    public Task Handle(MockNotification notification, CancellationToken cancellationToken)
+    public Task<ENotificationResponse> Handle(MockNotification notification, CancellationToken cancellationToken)
     {
         Executed = true;
-        return Task.CompletedTask;
+        return Task.FromResult(ENotificationResponse.Completed);
     }
 }

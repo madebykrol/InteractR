@@ -9,8 +9,8 @@ namespace InteractR.Tests.Mocks;
 
 public class MockGlobalMiddleware : IMiddleware
 {
-    public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken)
+    public Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next, CancellationToken cancellationToken)
     {
-        return next.Invoke(usecase);
+        return next.Invoke(usecase, null);
     }
 }

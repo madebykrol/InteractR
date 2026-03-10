@@ -46,7 +46,7 @@ public class SelfContainedResolverTests
             .Execute(new MockUseCase(), null, CancellationToken.None);
 
         middleware.Received(1).Execute(Arg.Any<MockUseCase>(),
-            Arg.Any<Func<MockUseCase, Task<UseCaseResult>>>(), Arg.Any<CancellationToken>());
+            Arg.Any<Func<MockUseCase, CancellationToken?, Task<UseCaseResult>>>(), Arg.Any<CancellationToken>());
     }
 
     [Test]

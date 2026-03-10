@@ -1,5 +1,4 @@
-﻿using InteractR;
-using InteractR.Interactor;
+﻿using InteractR.Interactor;
 
 namespace InteractR.Resolver;
 

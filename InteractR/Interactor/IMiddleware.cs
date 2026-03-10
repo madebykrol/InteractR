@@ -7,10 +7,10 @@ namespace InteractR.Interactor;
 public interface IMiddleware<TUseCase, in TOutputPort> 
     where TUseCase : IUseCase<TOutputPort>
 {
-    Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);
+    Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next, CancellationToken cancellationToken);
 }
 
-public interface IOrderedMiddleware
+public interface IOrdered
 {
     int Order { get; }
 }
@@ -22,12 +22,12 @@ public interface IConditionalMiddleware<in TUseCase>
 
 public interface IMiddleware
 {
-    Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next, CancellationToken cancellationToken);
+    Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next, CancellationToken cancellationToken);
 }
 
 public interface IMiddleware<in TType>
 {
-    Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, Task<UseCaseResult>> next,
+    Task<UseCaseResult> Execute<TUseCase>(TUseCase usecase, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next,
         CancellationToken cancellationToken)
         where TUseCase :  TType;
 }
