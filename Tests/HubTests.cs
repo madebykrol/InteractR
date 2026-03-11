@@ -7,13 +7,14 @@ using InteractR.Tests.Mocks;
 using NSubstitute;
 using NUnit.Framework;
 using System.Collections.Generic;
+using InteractR.Notifications;
 
 namespace InteractR.Tests;
 
 [TestFixture]
 public class HubTests
 {
-    private IInteractorHub _interactorHub;
+    private IHub _interactorHub;
     private Hub _hub;
     private IResolver _handlerResolver;
     private IRegistrator _handlerRegistrator;
@@ -22,11 +23,12 @@ public class HubTests
     [SetUp]
     public void Setup()
     {
-        _handlerResolver = new SelfContainedResolver();
+        var resolver = new SelfContainedResolver();
+        _handlerResolver = resolver;
         _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
-        _handlerRegistrator = _handlerResolver as IRegistrator;
+        _handlerRegistrator = resolver;
 
-        _hub = new Hub(_handlerResolver);
+        _hub = new Hub(resolver, resolver.NotificationTypeRegistry, new HubOptions());
         _interactorHub = _hub;
     }
 
@@ -237,65 +239,51 @@ public class HubTests
 
         await _interactorHub.Publish(new MockNotification());
 
-        await outlet.Received(1).Publish(Arg.Any<PublishedNotification<MockNotification>>(), Arg.Any<CancellationToken>());
+        await outlet.Received(1).Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
-    public async Task Publish_Ignores_BrokerEcho_WhenMessageAlreadyHandledInProcess()
+    public async Task Publish_Processes_BrokerEcho_WhenSameMessageIsReceivedFromInlet()
     {
         var handler = Substitute.For<INotificationHandler<MockNotification>>();
+        handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ENotificationResponse.Completed));
         var outlet = Substitute.For<INotificationOutlet>();
         _handlerRegistrator.Register(handler);
         _handlerRegistrator.Register(outlet);
 
-        var message = new PublishedNotification<MockNotification>(new MockNotification(), "message-1", NotificationOrigin.InProcess);
-        await _interactorHub.Publish(message);
+        // Publish in-process with known messageId
+        await _hub.Publish(new MockNotification(), "message-1");
 
-        var echoedMessage = new PublishedNotification<MockNotification>(new MockNotification(), "message-1", NotificationOrigin.OutOfProcess);
-        await _interactorHub.Publish(echoedMessage);
+        // Simulate broker echo via inlet with same messageId
+        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), "message-1"));
+        await _hub.OpenNotificationInlets();
 
-        await handler.Received(1).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
-        await outlet.Received(1).Publish(Arg.Any<PublishedNotification<MockNotification>>(), Arg.Any<CancellationToken>());
+        // Handler called for both the in-process publish and the inlet message
+        await handler.Received(2).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
+        // Outlet called once (in-process publish only)
+        await outlet.Received(1).Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
-    public async Task Publish_Uses_Injected_NotificationHandlingStore()
+    public async Task Publish_Uses_Provided_MessageId_For_NotificationEnvelope()
     {
-        var notificationHandlingStore = Substitute.For<INotificationHandlingStore>();
-        notificationHandlingStore.TryMarkAsHandled(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(true));
+        var outlet = Substitute.For<INotificationOutlet>();
+        _handlerRegistrator.Register(outlet);
 
-        var hub = new Hub(_handlerResolver, notificationHandlingStore);
-        var handler = Substitute.For<INotificationHandler<MockNotification>>();
-        _handlerRegistrator.Register(handler);
+        await _hub.Publish(new MockNotification(), "message-1");
 
-        await hub.Publish(new MockNotification());
-
-        await notificationHandlingStore.Received(1).TryMarkAsHandled(Arg.Any<string>(), Arg.Any<CancellationToken>());
-    }
-
-    [Test]
-    public void Publish_Unmarks_Notification_When_Handler_Fails()
-    {
-        var notificationHandlingStore = Substitute.For<INotificationHandlingStore>();
-        notificationHandlingStore.TryMarkAsHandled(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(true));
-
-        var hub = new Hub(_handlerResolver, notificationHandlingStore);
-        var handler = Substitute.For<INotificationHandler<MockNotification>>();
-        handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
-            .Returns<Task<ENotificationResponse>>(_ => throw new Exception("Fail"));
-        _handlerRegistrator.Register(handler);
-
-        Assert.ThrowsAsync<Exception>(async () => await hub.Publish(new MockNotification()));
-
-        notificationHandlingStore.Received(1).UnmarkAsHandled(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await outlet.Received(1).Publish(
+            Arg.Is<NotificationEnvelope>(x => x.MessageId == "message-1"),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
     public async Task StartNotificationInlets_InvokesInProcessHandlers_WithoutRepublishingToOutlets()
     {
         var handler = Substitute.For<INotificationHandler<MockNotification>>();
+        handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ENotificationResponse.Completed));
         var outlet = Substitute.For<INotificationOutlet>();
         _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), "inlet-message"));
         _handlerRegistrator.Register(handler);
@@ -304,8 +292,30 @@ public class HubTests
         await _interactorHub.OpenNotificationInlets();
 
         await handler.Received(1).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
-        await outlet.DidNotReceive().Publish(Arg.Any<PublishedNotification<MockNotification>>(), Arg.Any<CancellationToken>());
+        await outlet.DidNotReceive().Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>());
     }
+
+    [Test]
+    public async Task Publish_Processes_InletNotification_Each_Time_It_Is_Received()
+    {
+        var handler = Substitute.For<INotificationHandler<MockNotification>>();
+        handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(ENotificationResponse.Completed));
+        _handlerRegistrator.Register(handler);
+
+        var messageId = "test-message-1";
+
+        // Publish in-process with known messageId
+        await _hub.Publish(new MockNotification(), messageId);
+
+        // Simulate out-of-process duplicate via inlet
+        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), messageId));
+        await _hub.OpenNotificationInlets();
+
+        // Handler should be called for both the in-process publish and the inlet message
+        await handler.Received(2).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
+    }
+
 
     [Test]
     public void Middleware_Executes_In_Order_WhenOrderedMiddlewareIsUsed()
@@ -390,19 +400,19 @@ public class HubTests
             _messageId = messageId;
         }
 
-        public async Task Open(Func<NotificationEnvelope, Task<EInletResponse>> ingress, CancellationToken cancellationToken = default, PublishStrategy strategy = PublishStrategy.Sequential)
+        public async Task Open(Func<NotificationEnvelope, Task<EInletResponse>> ingress, CancellationToken cancellationToken = default, EProcessingStrategy strategy = EProcessingStrategy.Sequential)
         {
-            // TODO: Serialize notification to payload when serialization infrastructure is ready
+            var registry = new NotificationTypeRegistry();
+            var address = registry.ResolveAddress(typeof(MockNotification));
             var envelope = new NotificationEnvelope
             {
                 MessageId = _messageId,
-                Payload = "{ /* serialized notification */ }",
-                Address = typeof(MockNotification).FullName,
-                Headers = "{}"
+                Subject = address.Subject,
+                Topic = address.Topic,
+                Payload = System.Text.Json.JsonSerializer.Serialize(_notification),
             };
 
-            var response = await ingress(envelope);
-            // In a real inlet, would ack/nack to broker based on response
+            await ingress(envelope);
         }
     }
 }

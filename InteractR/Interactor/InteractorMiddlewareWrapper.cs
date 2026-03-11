@@ -15,5 +15,3 @@ internal sealed class InteractorMiddlewareWrapper<TUseCase, TOutputPort>(IIntera
     public Task<UseCaseResult> Execute(TUseCase usecase, TOutputPort outputPort, Func<TUseCase, CancellationToken?, Task<UseCaseResult>> next, CancellationToken cancellationToken) 
         => interactor.Execute(usecase, outputPort, cancellationToken);
 }
-
-public delegate Task<UseCaseResult> Next<TUseCase>(TUseCase usecase, CancellationToken? cancellationToken = null);

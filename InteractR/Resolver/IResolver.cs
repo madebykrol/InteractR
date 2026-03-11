@@ -1,4 +1,5 @@
 ﻿using InteractR.Interactor;
+using InteractR.Notifications;
 using System.Collections.Generic;
 
 namespace InteractR.Resolver;
@@ -12,8 +13,7 @@ public interface IResolver
 
     IReadOnlyList<IMiddleware<TUseCase>> ResolveMiddleware<TUseCase>();
     IReadOnlyList<IMiddleware> ResolveGlobalMiddleware();
-    IReadOnlyList<INotificationHandler<TNotification>> ResolveNotificationHandlers<TNotification>()
-        where TNotification : INotification;
+    IReadOnlyList<INotificationHandler<TNotification>> ResolveNotificationHandlers<TNotification>();
     IReadOnlyList<INotificationOutlet> ResolveNotificationOutlets();
     IReadOnlyList<INotificationInlet> ResolveNotificationInlets();
 }

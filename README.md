@@ -76,19 +76,19 @@ InteractR supports global, generic, and use-case specific middleware.
 
 ### Ordered middleware
 
-Implement `IOrderedMiddleware` to control execution order:
+Implement `IOrdered` to control execution order:
 
 ```csharp
-public sealed class AuditMiddleware : IMiddleware<GreetUseCase, IGreetUseCaseOutputPort>, IOrderedMiddleware
+public sealed class AuditMiddleware : IMiddleware<GreetUseCase, IGreetUseCaseOutputPort>, IOrdered
 {
     public int Order => 10;
 
     public Task<UseCaseResult> Execute(
         GreetUseCase useCase,
         IGreetUseCaseOutputPort outputPort,
-        Func<GreetUseCase, Task<UseCaseResult>> next,
+        Func<GreetUseCase, CancellationToken?, Task<UseCaseResult>> next,
         CancellationToken cancellationToken)
-        => next(useCase);
+        => next(useCase, null);
 }
 ```
 
@@ -112,9 +112,9 @@ public sealed class FeatureToggleMiddleware : IMiddleware<GreetUseCase, IGreetUs
     public Task<UseCaseResult> Execute(
         GreetUseCase useCase,
         IGreetUseCaseOutputPort outputPort,
-        Func<GreetUseCase, Task<UseCaseResult>> next,
+        Func<GreetUseCase, CancellationToken?, Task<UseCaseResult>> next,
         CancellationToken cancellationToken)
-        => next(useCase);
+        => next(useCase, null);
 }
 ```
 
@@ -122,46 +122,59 @@ public sealed class FeatureToggleMiddleware : IMiddleware<GreetUseCase, IGreetUs
 
 InteractR supports:
 
+- plain CLR event types
 - in-process handlers (`INotificationHandler<TNotification>`)
 - out-of-process outlets (`INotificationOutlet`) for event bus publishing
 - inbound adapters (`INotificationInlet`) registered as message sources
-- idempotent handling using `INotificationHandlingStore` (default: `InMemoryNotificationHandlingStore`)
+- implicit address resolution based on type names or explicit routing via `NotificationRouteAttribute`
 
-### Define and register notification handlers/outlets
+### Define and register event handlers/outlets
 
 ```csharp
-public sealed class UserRegistered : INotification
+public sealed class UserRegistered
 {
-    public UserRegistered(Guid userId) => UserId = userId;
-
     public Guid UserId { get; }
+    
+    public UserRegistered(Guid userId) => UserId = userId;
 }
 
 public sealed class WelcomeEmailHandler : INotificationHandler<UserRegistered>
 {
-    public Task Handle(UserRegistered notification, CancellationToken cancellationToken)
+    public Task<ENotificationResponse> Handle(UserRegistered notification, CancellationToken cancellationToken)
     {
         // Send email
-        return Task.CompletedTask;
+        return Task.FromResult(ENotificationResponse.Completed);
     }
 }
 
 public sealed class BrokerOutlet : INotificationOutlet
 {
-    public Task Publish<TNotification>(PublishedNotification<TNotification> notification, CancellationToken cancellationToken)
-        where TNotification : INotification
+    public Task Open(CancellationToken cancellationToken) => Task.CompletedTask;
+    
+    public Task Publish(NotificationEnvelope envelope, CancellationToken cancellationToken)
     {
-        // Push notification.MessageId + payload to broker
+        // Push envelope (with Subject, Topic, MessageId, and JSON payload) to broker
         return Task.CompletedTask;
     }
 }
 
 public sealed class BrokerInlet : INotificationInlet
 {
-    public Task Start(INotificationIngress ingress, CancellationToken cancellationToken = default, PublishStrategy strategy = PublishStrategy.Sequential)
+    public Task Open(
+        Func<NotificationEnvelope, Task<EInletResponse>> ingress,
+        CancellationToken cancellationToken = default,
+        EProcessingStrategy strategy = EProcessingStrategy.Sequential)
     {
-        // Example broker callback:
-        // return ingress.Ingest(new PublishedNotification<UserRegistered>(payload, messageId, NotificationOrigin.OutOfProcess), cancellationToken, strategy);
+        // Example broker callback when receiving message:
+        // var envelope = new NotificationEnvelope {
+        //     MessageId = brokerMessageId,
+        //     Subject = "User",
+        //     Topic = "Registered",
+        //     Payload = jsonPayload,
+        //     Headers = new Dictionary<string, string>()
+        // };
+        // var response = await ingress(envelope);
+        // if (response == EInletResponse.Ack) BrokerAck(); else BrokerNack();
         return Task.CompletedTask;
     }
 }
@@ -174,6 +187,19 @@ resolver.Register(new BrokerInlet());
 var hub = new Hub(resolver);
 ```
 
+By convention, `UserRegistered` resolves to `Subject = "User"` and `Topic = "Registered"`.
+Use `NotificationRouteAttribute` when you want explicit routing:
+
+```csharp
+[NotificationRoute("Identity", "UserRegistered")]
+public sealed class UserRegisteredIntegrationEvent
+{
+    public Guid UserId { get; }
+
+    public UserRegisteredIntegrationEvent(Guid userId) => UserId = userId;
+}
+```
+
 ### Publish from inside the process
 
 ```csharp
@@ -182,38 +208,16 @@ await hub.Publish(new UserRegistered(Guid.NewGuid()));
 
 This will:
 1. Run in-process handlers.
-2. Forward the same event (with message id) to registered outlets.
+2. Resolve a `Subject` and `Topic` for the event type.
+3. Serialize the event to JSON and forward it to registered outlets.
 
-### Start inbound ingestion (broker -> inlet -> hub)
-
-```csharp
-await hub.StartNotificationInlets(cancellationToken);
-```
-
-Inlets are source adapters. The hub ingests from all registered inlets, routes to in-process handlers, and does not re-publish out-of-process-origin notifications to outlets (prevents loops).
-
-## Pluggable idempotency store (inbox/outbox scenarios)
-
-Use a custom `INotificationHandlingStore` when you need durable deduplication (for example SQL/Redis):
+### Start inbound ingestion
 
 ```csharp
-public sealed class SqlNotificationHandlingStore : INotificationHandlingStore
-{
-    public async Task<bool> TryMarkAsHandled(string notificationKey, CancellationToken cancellationToken)
-    {
-        // Insert key with unique constraint; return false if already exists
-        return await Task.FromResult(true);
-    }
-
-    public Task UnmarkAsHandled(string notificationKey, CancellationToken cancellationToken)
-    {
-        // Optional rollback/remove when publish fails
-        return Task.CompletedTask;
-    }
-}
-
-var hub = new Hub(resolver, new SqlNotificationHandlingStore());
+await hub.OpenNotificationInlets(cancellationToken);
 ```
+
+Inlets are source adapters. The hub ingests from all registered inlets, deserializes JSON payloads, resolves the event type from `Subject` and `Topic`, routes to in-process handlers, and does not re-publish out-of-process-origin messages to outlets.
 
 ## Resolvers
 

@@ -1,6 +1,6 @@
 namespace InteractR;
 
-public enum PublishStrategy
+public enum EProcessingStrategy
 {
     Sequential = 0,
     Parallel = 1

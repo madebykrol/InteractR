@@ -1,4 +1,5 @@
 ﻿using InteractR.Interactor;
+using InteractR.Notifications;
 
 namespace InteractR.Resolver;
 
@@ -12,8 +13,7 @@ public interface IRegistrator
 
     void Register<TUseCase>(IMiddleware<TUseCase> middleware);
 
-    void Register<TNotification>(INotificationHandler<TNotification> notificationHandler)
-        where TNotification : INotification;
+    void Register<TNotification>(INotificationHandler<TNotification> notificationHandler);
 
     void Register(INotificationInlet inlet);
 

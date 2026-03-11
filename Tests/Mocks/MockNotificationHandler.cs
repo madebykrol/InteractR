@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using InteractR.Interactor;
+using InteractR.Notifications;
 
 namespace InteractR.Tests.Mocks;
 

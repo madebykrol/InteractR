@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using InteractR.Interactor;
+using InteractR.Notifications;
 using InteractR.Resolver;
 using InteractR.Tests.Mocks;
 using NSubstitute;

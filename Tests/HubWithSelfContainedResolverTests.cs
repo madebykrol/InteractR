@@ -18,7 +18,7 @@ public class HubWithSelfContainedResolverTests
     public void Setup()
     {
         _handlerResolver = new SelfContainedResolver();
-        _interactorHub = new Hub(_handlerResolver);
+        _interactorHub = new Hub(_handlerResolver, _handlerResolver.NotificationTypeRegistry, new HubOptions());
     }
 
     [Test]

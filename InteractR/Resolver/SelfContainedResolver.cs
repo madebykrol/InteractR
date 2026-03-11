@@ -1,4 +1,5 @@
-﻿using InteractR.Interactor;
+using InteractR.Interactor;
+using InteractR.Notifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,8 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     private readonly IList<IMiddleware> _globalPipeline = new List<IMiddleware>();
     private readonly IList<INotificationInlet> _notificationInlets = new List<INotificationInlet>();
     private readonly IList<INotificationOutlet> _notificationOutlets = new List<INotificationOutlet>();
+
+    public INotificationTypeRegistry NotificationTypeRegistry { get; } = new NotificationTypeRegistry();
 
     public IInteractor<TUseCase, TOutputPort> ResolveInteractor<TUseCase, TOutputPort>(TUseCase useCase) where TUseCase : IUseCase<TOutputPort>
         => (IInteractor<TUseCase, TOutputPort>)ResolveInteractor(typeof(IInteractor<TUseCase, TOutputPort>));
@@ -41,7 +44,6 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     public IReadOnlyList<IMiddleware> ResolveGlobalMiddleware() => (IReadOnlyList<IMiddleware>)_globalPipeline ?? new List<IMiddleware>();
 
     public IReadOnlyList<INotificationHandler<TNotification>> ResolveNotificationHandlers<TNotification>()
-        where TNotification : INotification
     {
         var notificationType = typeof(TNotification);
         if (!_notificationHandlers.ContainsKey(notificationType))
@@ -90,13 +92,13 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
     }
 
     public void Register<TNotification>(INotificationHandler<TNotification> notificationHandler)
-        where TNotification : INotification
     {
         var notificationType = typeof(TNotification);
         if (!_notificationHandlers.ContainsKey(notificationType))
             _notificationHandlers[notificationType] = new List<object>();
 
         _notificationHandlers[notificationType].Add(notificationHandler);
+        NotificationTypeRegistry.Register(notificationType);
     }
 
     public void Register(INotificationOutlet outlet)

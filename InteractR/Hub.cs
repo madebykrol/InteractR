@@ -1,28 +1,31 @@
 ﻿using InteractR.Exceptions;
 using InteractR.Interactor;
+using InteractR.Notifications;
 using InteractR.Resolver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace InteractR;
 
-public class Hub : IInteractorHub
+public class Hub : IHub
 {
     private readonly IResolver _resolver;
-    private readonly INotificationHandlingStore _notificationHandlingStore;
+    private readonly INotificationTypeRegistry _typeRegistry;
+    private readonly IHubOptions _options;
 
-    public Hub(IResolver resolver)
-        : this(resolver, new InMemoryNotificationHandlingStore())
+    public Hub(IResolver resolver) : this(resolver, new NotificationTypeRegistry(), new HubOptions())
     {
     }
 
-    public Hub(IResolver resolver, INotificationHandlingStore notificationHandlingStore)
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, IHubOptions hubOptions)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-        _notificationHandlingStore = notificationHandlingStore ?? throw new ArgumentNullException(nameof(notificationHandlingStore));
+        _typeRegistry = typeRegistry ?? throw new ArgumentNullException(nameof(typeRegistry));
+        _options = hubOptions ?? throw new ArgumentNullException(nameof(hubOptions));
     }
 
     public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort)
@@ -83,11 +86,8 @@ public class Hub : IInteractorHub
 
         return NextMiddleWare(useCase);
     }
-    public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default, PublishStrategy strategy = PublishStrategy.Sequential)
-        where TNotification : INotification
-        => Publish(new PublishedNotification<TNotification>(notification), cancellationToken, strategy);
 
-    public Task OpenNotificationInlets(CancellationToken cancellationToken = default, PublishStrategy strategy = PublishStrategy.Sequential)
+    public Task OpenNotificationInlets(CancellationToken cancellationToken = default, EProcessingStrategy strategy = EProcessingStrategy.Sequential)
     {
         var inlets = _resolver.ResolveNotificationInlets();
         if (inlets.Count == 0)
@@ -97,14 +97,47 @@ public class Hub : IInteractorHub
 
         return Task.WhenAll(
             inlets.Select(x => 
-                x.Open((envelope) => PublishEnvelopeToHandlers(envelope, x, cancellationToken),
+                x.Open((envelope) => SendEnvelopeToHandlers(envelope, x, cancellationToken),
                     cancellationToken,
                     strategy)));
     }
 
-    protected async Task<EInletResponse> PublishEnvelopeToHandlers(NotificationEnvelope envelope, INotificationInlet inlet, CancellationToken cancellationToken)
+    protected Type GetNotificationTypeFromEnvelope(NotificationEnvelope envelope)
     {
-        return EInletResponse.Ack;
+        return _typeRegistry.Resolve(envelope.Subject, envelope.Topic);
+    }
+
+    protected async Task<EInletResponse> SendEnvelopeToHandlers(NotificationEnvelope envelope, INotificationInlet inlet, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var notificationType = GetNotificationTypeFromEnvelope(envelope);
+            if (notificationType == null)
+                return EInletResponse.Nack;
+
+            var notification = System.Text.Json.JsonSerializer.Deserialize(envelope.Payload, notificationType);
+
+            var resolveMethod = typeof(IResolver).GetMethod(nameof(IResolver.ResolveNotificationHandlers))
+                ?.MakeGenericMethod(notificationType);
+            if (resolveMethod == null)
+                return EInletResponse.Nack;
+
+            var handlers = resolveMethod.Invoke(_resolver, Array.Empty<object>());
+
+            var publishMethod = typeof(Hub).GetMethod(nameof(PublishSequential), BindingFlags.NonPublic | BindingFlags.Static)
+                ?.MakeGenericMethod(notificationType);
+            if (publishMethod == null)
+                return EInletResponse.Nack;
+
+            var result = await (Task<ENotificationResponse>)publishMethod.Invoke(null, new object[] { notification, cancellationToken, handlers });
+
+            return result == ENotificationResponse.Failed ? EInletResponse.Nack : EInletResponse.Ack;
+        }
+        catch (Exception)
+        {
+            // On any failure, Nack the message so the broker can retry or dead-letter it
+            return EInletResponse.Nack;
+        }
     }
 
     public Task OpenNotificationOutlets(CancellationToken cancellationToken = default)
@@ -119,37 +152,33 @@ public class Hub : IInteractorHub
         return Task.WhenAll(outlets.Select(x => x.Open(cancellationToken)));
     }
 
-    public async Task Publish<TNotification>(PublishedNotification<TNotification> notification, CancellationToken cancellationToken = default,
-        PublishStrategy strategy = PublishStrategy.Sequential)
-        where TNotification : INotification
+    public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+        => PublishInternal(notification, Guid.NewGuid().ToString(), cancellationToken);
+
+    public Task Publish<TNotification>(TNotification notification, string messageId, CancellationToken cancellationToken = default)
+        => PublishInternal(notification, messageId, cancellationToken);
+
+    private async Task PublishInternal<TNotification>(TNotification notification, string messageId, CancellationToken cancellationToken)
     {
-        if (notification == null)
-        {
-            throw new UseCaseNullException("The published notification cannot be null");
-        }
+        var handlers = _resolver.ResolveNotificationHandlers<TNotification>();
+        await PublishSequential(notification, cancellationToken, handlers);
 
-        var notificationKey = GetNotificationKey<TNotification>(notification.MessageId);
-        if (!await _notificationHandlingStore.TryMarkAsHandled(notificationKey, cancellationToken).ConfigureAwait(false))
+        var address = _typeRegistry.ResolveAddress(typeof(TNotification));
+        var envelope = new NotificationEnvelope
         {
-            return;
-        }
+            MessageId = messageId,
+            Subject = address.Subject,
+            Topic = address.Topic,
+            Payload = System.Text.Json.JsonSerializer.Serialize(notification),
+        };
 
-        try
+        var outlets = _resolver.ResolveNotificationOutlets();
+        foreach (var outlet in outlets)
         {
-            var response = await DispatchInProcess(notification.Notification, cancellationToken, strategy).ConfigureAwait(false);
-
-            // Only dispatch to outlets if in-process dispatch succeeded and origin is in-process
-            if (response != ENotificationResponse.Failed && notification.Origin == NotificationOrigin.InProcess)
-            {
-                await DispatchOutOfProcess(notification, cancellationToken, strategy).ConfigureAwait(false);
-            }
-        }
-        catch
-        {
-            await _notificationHandlingStore.UnmarkAsHandled(notificationKey, cancellationToken).ConfigureAwait(false);
-            throw;
+            await outlet.Publish(envelope, cancellationToken);
         }
     }
+
 
     public Task<UseCaseResult> Run<TUseCase, TOutputPort>(in TUseCase useCase, in TOutputPort outputPort) where TUseCase : IUseCase<TOutputPort> => Execute(useCase, outputPort);
 
@@ -159,7 +188,6 @@ public class Hub : IInteractorHub
         TNotification notification,
         CancellationToken cancellationToken,
         IReadOnlyList<INotificationHandler<TNotification>> handlers)
-        where TNotification : INotification
     {
         if (handlers.Count == 0)
         {
@@ -170,7 +198,7 @@ public class Hub : IInteractorHub
         foreach (var handler in handlers)
         {
             var result = await handler.Handle(notification, cancellationToken).ConfigureAwait(false);
-            
+
             // If any handler fails, mark overall as failed
             if (result == ENotificationResponse.Failed)
             {
@@ -180,67 +208,21 @@ public class Hub : IInteractorHub
 
         return overallResult;
     }
+}
 
-    private async Task<ENotificationResponse> DispatchInProcess<TNotification>(TNotification notification, CancellationToken cancellationToken, PublishStrategy strategy)
-        where TNotification : INotification
-    {
-        var handlers = _resolver.ResolveNotificationHandlers<TNotification>();
-        if (handlers.Count == 0)
-        {
-            return ENotificationResponse.Ignored;
-        }
+public interface IHubOptions
+{
+    Func<object, NotificationRouteData>? ResolveNotificationRouteData { get; set; }
+}
 
-        if (strategy == PublishStrategy.Parallel)
-        {
-            var results = await Task.WhenAll(handlers.Select(x => x.Handle(notification, cancellationToken))).ConfigureAwait(false);
-            
-            // If any handler failed, return Failed
-            if (results.Any(r => r == ENotificationResponse.Failed))
-            {
-                return ENotificationResponse.Failed;
-            }
-            
-            // If all handlers ignored, return Ignored
-            if (results.All(r => r == ENotificationResponse.Ignored))
-            {
-                return ENotificationResponse.Ignored;
-            }
-            
-            return ENotificationResponse.Completed;
-        }
+public class HubOptions : IHubOptions
+{
+    public Func<object, NotificationRouteData>? ResolveNotificationRouteData { get; set; }
+}
 
-        return await PublishSequential(notification, cancellationToken, handlers).ConfigureAwait(false);
-    }
+public class NotificationRouteData
+{
+    private string RouteKey { get; set; }
+    private string Topic { get; set; }
 
-    private Task DispatchOutOfProcess<TNotification>(PublishedNotification<TNotification> notification, CancellationToken cancellationToken, PublishStrategy strategy)
-        where TNotification : INotification
-    {
-        var outlets = _resolver.ResolveNotificationOutlets();
-        if (outlets.Count == 0)
-        {
-            return Task.CompletedTask;
-        }
-
-        if (strategy == PublishStrategy.Parallel)
-        {
-            return Task.WhenAll(outlets.Select(x => x.Publish(notification, cancellationToken)));
-        }
-
-        return PublishToOutletsSequential(notification, cancellationToken, outlets);
-    }
-
-    private static async Task PublishToOutletsSequential<TNotification>(PublishedNotification<TNotification> notification,
-        CancellationToken cancellationToken,
-        IReadOnlyList<INotificationOutlet> outlets)
-        where TNotification : INotification
-    {
-        foreach (var outlet in outlets)
-        {
-            await outlet.Publish(notification, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private static string GetNotificationKey<TNotification>(string messageId)
-        where TNotification : INotification
-        => $"{typeof(TNotification).FullName}:{messageId}";
 }

@@ -1,7 +1,4 @@
-using InteractR.Interactor;
-
 namespace InteractR.Tests.Mocks;
 
-public sealed class MockNotification : INotification
-{
-}
+public sealed class MockNotification;
+
