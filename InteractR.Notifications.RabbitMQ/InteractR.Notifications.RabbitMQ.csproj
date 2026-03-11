@@ -2,24 +2,25 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net9.0;net10.0</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <Version>10.0.0-preview2</Version>
     <PackageProjectUrl>https://github.com/madebykrol/InteractR</PackageProjectUrl>
     <RepositoryUrl>https://github.com/madebykrol/InteractR</RepositoryUrl>
     <AssemblyVersion>10.0.0.3</AssemblyVersion>
     <NeutralLanguage>en</NeutralLanguage>
-    <Description>Simple indirection framework and mediator implementation inspired by the interactor pattern</Description>
+    <Description>InteractR notification in- and outlet implementation using RabbitMQ</Description>
     <Authors>Kristoffer Olsson</Authors>
     <Company>Kristoffer Olsson</Company>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <ProjectReference Include="..\InteractR\InteractR.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.4" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
   </ItemGroup>
 
 </Project>
-

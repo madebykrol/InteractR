@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -25,9 +26,15 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
     public NotificationAddress ResolveAddress(Type notificationType)
     {
         var attr = notificationType.GetCustomAttribute<NotificationRouteAttribute>();
+        var subject = notificationType.Namespace ?? string.Empty;
+        var topic = notificationType.Name;
         if (attr != null)
         {
-            return new NotificationAddress { Subject = attr.Subject, Topic = attr.Topic };
+            if(!string.IsNullOrEmpty(attr.Subject))
+                subject = attr.Subject;
+
+            if(!string.IsNullOrEmpty(attr.Topic))
+                topic = attr.Topic;
         }
 
         // We should resolve Subject and Topic based on conventions
@@ -40,16 +47,20 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
         if (splitTypeName.Length > 0)
         {
             // The last word is the topic, and the rest is the subject
-            var topic = splitTypeName[^1];
-            var subject = string.Join("", splitTypeName, 0, splitTypeName.Length - 1);
-            return new NotificationAddress { Subject = subject, Topic = topic };
+            topic = splitTypeName[^1];
+            subject = string.Join("", splitTypeName, 0, splitTypeName.Length - 1);
         }
 
         return new NotificationAddress
         {
-            Subject = notificationType.Namespace ?? string.Empty,
-            Topic = notificationType.Name
+            Subject = subject,
+            Topic = topic
         };
+    }
+
+    public IReadOnlyList<Type> NotificationSubscriptionTypes()
+    {
+        return _map.Values.ToList();
     }
 
     private string[] SplitByCapitalLetters(string notificationTypeName)

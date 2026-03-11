@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace InteractR.Notifications;
 
@@ -30,4 +31,6 @@ public interface INotificationTypeRegistry
     /// otherwise falls back to namespace ? Subject, type name ? Topic.
     /// </summary>
     NotificationAddress ResolveAddress(Type notificationType);
+
+    IReadOnlyList<Type> NotificationSubscriptionTypes();
 }
