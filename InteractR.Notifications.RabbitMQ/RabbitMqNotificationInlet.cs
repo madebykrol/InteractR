@@ -200,7 +200,7 @@ public sealed class RabbitMqNotificationInlet : INotificationInlet, IAsyncDispos
             MessageId = eventArgs.BasicProperties.MessageId ?? Guid.NewGuid().ToString(),
             CausalityId = eventArgs.BasicProperties.CorrelationId,
             Subject = eventArgs.Exchange,
-            Topic = ConvertRouteKeyToTopic(eventArgs.RoutingKey),
+            Topic = eventArgs.RoutingKey,
             Headers = headers,
             Payload = Encoding.UTF8.GetString(eventArgs.Body.ToArray())
         };
@@ -267,16 +267,6 @@ public sealed class RabbitMqNotificationInlet : INotificationInlet, IAsyncDispos
         return string.Join('.', words);
     }
 
-    private static string ConvertRouteKeyToTopic(string routingKey)
-    {
-        var parts = routingKey.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        return string.Concat(parts.Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
-    }
 }
 
 

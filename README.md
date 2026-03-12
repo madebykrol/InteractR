@@ -187,7 +187,8 @@ resolver.Register(new BrokerInlet());
 var hub = new Hub(resolver);
 ```
 
-By convention, `UserRegistered` resolves to `Subject = "User"` and `Topic = "Registered"`.
+By convention, `UserRegistered` resolves to `Subject = "user"` and `Topic = "registered"`.
+`OrderLineCreatedEvent` resolves to `Subject = "order"` and `Topic = "line.created"`.
 Use `NotificationRouteAttribute` when you want explicit routing:
 
 ```csharp
@@ -210,6 +211,34 @@ This will:
 1. Run in-process handlers.
 2. Resolve a `Subject` and `Topic` for the event type.
 3. Serialize the event to JSON and forward it to registered outlets.
+
+### Custom notification metadata mapping (without domain dependency on InteractR)
+
+You can inject `INotificationMetaDataResolver` directly into `Hub` and map your own event contracts (for example `IEvent`) to transport metadata.
+
+```csharp
+public interface IEvent
+{
+    string Id { get; }
+    string CorrelationId { get; }
+}
+
+var resolver = new SelfContainedResolver();
+var metadataMap = new NotificationMetaDataMap()
+    .Map<IEvent>(e => new NotificationMetaData
+    {
+        MessageId = e.Id,
+        CausalityId = e.CorrelationId
+    });
+
+var hub = new Hub(
+    resolver,
+    resolver.NotificationTypeRegistry,
+    metadataMap,
+    new HubOptions());
+```
+
+This keeps domain events as plain CLR types and avoids adding InteractR-specific interfaces in domain/core.
 
 ### Start inbound ingestion
 

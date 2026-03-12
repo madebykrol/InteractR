@@ -88,9 +88,9 @@ public class RabbitMqNotificationTransportTests
     public async Task Inlet_Consumes_Message_And_Forwards_Envelope_To_Ingress()
     {
         var registry = new NotificationTypeRegistry();
-        registry.Register<OrderCreatedEvent>();
+        registry.Register<XqzInletOrderCreatedEvent>();
 
-        var address = registry.ResolveAddress(typeof(OrderCreatedEvent));
+        var address = registry.ResolveAddress(typeof(XqzInletOrderCreatedEvent));
         var queueName = CreateQueueName("inlet-client", address.Subject, address.Topic);
         var routingKey = CreateRouteKeyFromTopic(address.Topic);
         var messageId = Guid.NewGuid().ToString("N");
@@ -146,7 +146,7 @@ public class RabbitMqNotificationTransportTests
             Assert.That(envelopeFromInlet.Headers["route-key"], Is.EqualTo(routingKey));
         });
 
-        //await DeleteTopologyAsync(queueName, address.Subject);
+        await DeleteTopologyAsync(queueName, address.Subject);
     }
 
     private RabbitMqNotificationOptions CreateOptions(string clientName)
@@ -268,7 +268,7 @@ public class RabbitMqNotificationTransportTests
         };
     }
 
-    private sealed class OrderCreatedEvent
+    private sealed class XqzInletOrderCreatedEvent
     {
         public string Value { get; set; }
     }

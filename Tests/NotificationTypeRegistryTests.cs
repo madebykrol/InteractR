@@ -34,8 +34,8 @@ public class NotificationTypeRegistryTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(address.Subject, Is.EqualTo("Order"));
-            Assert.That(address.Topic, Is.EqualTo("Placed"));
+            Assert.That(address.Subject, Is.EqualTo("order"));
+            Assert.That(address.Topic, Is.EqualTo("placed"));
         });
     }
 
@@ -46,8 +46,8 @@ public class NotificationTypeRegistryTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(address.Subject, Is.EqualTo("User"));
-            Assert.That(address.Topic, Is.EqualTo("Created"));
+            Assert.That(address.Subject, Is.EqualTo("user"));
+            Assert.That(address.Topic, Is.EqualTo("created"));
         });
     }
 
@@ -58,20 +58,20 @@ public class NotificationTypeRegistryTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(address.Subject, Is.EqualTo("OrderLineItem"));
-            Assert.That(address.Topic, Is.EqualTo("Created"));
+            Assert.That(address.Subject, Is.EqualTo("order"));
+            Assert.That(address.Topic, Is.EqualTo("line.item.created"));
         });
     }
 
     [Test]
-    public void ResolveAddress_Uses_Empty_Subject_For_Single_Word_Name()
+    public void ResolveAddress_Uses_First_Word_As_Subject_For_Single_Word_Name()
     {
         var address = _registry.ResolveAddress(typeof(MockNotification));
 
         Assert.Multiple(() =>
         {
-            Assert.That(address.Subject, Is.EqualTo(string.Empty));
-            Assert.That(address.Topic, Is.EqualTo("Mock"));
+            Assert.That(address.Subject, Is.EqualTo("mock"));
+            Assert.That(address.Topic, Is.EqualTo(string.Empty));
         });
     }
 
@@ -80,7 +80,7 @@ public class NotificationTypeRegistryTests
     {
         _registry.Register<OrderPlacedEvent>();
 
-        var resolvedType = _registry.Resolve("Order", "Placed");
+        var resolvedType = _registry.Resolve("order", "placed");
 
         Assert.That(resolvedType, Is.EqualTo(typeof(OrderPlacedEvent)));
     }

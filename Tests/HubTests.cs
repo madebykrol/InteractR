@@ -279,6 +279,60 @@ public class HubTests
     }
 
     [Test]
+    public async Task Publish_Uses_Injected_NotificationMetaDataResolver()
+    {
+        var outlet = Substitute.For<INotificationOutlet>();
+        _handlerRegistrator.Register(outlet);
+
+        var map = new NotificationMetaDataMap()
+            .Map<ICustomEvent>(x => new NotificationMetaData
+            {
+                MessageId = x.Id,
+                CausalityId = x.CorrelationId
+            });
+
+        var resolver = (SelfContainedResolver)_handlerResolver;
+        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions());
+
+        await hub.Publish(new CustomEvent
+        {
+            Id = "event-1",
+            CorrelationId = "corr-1"
+        });
+
+        await outlet.Received(1).Publish(
+            Arg.Is<NotificationEnvelope>(x => x.MessageId == "event-1" && x.CausalityId == "corr-1"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task Publish_Explicit_MessageId_Overrides_Resolved_MetaData()
+    {
+        var outlet = Substitute.For<INotificationOutlet>();
+        _handlerRegistrator.Register(outlet);
+
+        var map = new NotificationMetaDataMap()
+            .Map<ICustomEvent>(x => new NotificationMetaData
+            {
+                MessageId = x.Id,
+                CausalityId = x.CorrelationId
+            });
+
+        var resolver = (SelfContainedResolver)_handlerResolver;
+        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions());
+
+        await hub.Publish(new CustomEvent
+        {
+            Id = "event-2",
+            CorrelationId = "corr-2"
+        }, "override-id");
+
+        await outlet.Received(1).Publish(
+            Arg.Is<NotificationEnvelope>(x => x.MessageId == "override-id" && x.CausalityId == "corr-2"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task StartNotificationInlets_InvokesInProcessHandlers_WithoutRepublishingToOutlets()
     {
         var handler = Substitute.For<INotificationHandler<MockNotification>>();
@@ -414,5 +468,17 @@ public class HubTests
 
             await ingress(envelope);
         }
+    }
+
+    private interface ICustomEvent
+    {
+        string Id { get; }
+        string CorrelationId { get; }
+    }
+
+    private sealed class CustomEvent : ICustomEvent
+    {
+        public string Id { get; set; }
+        public string CorrelationId { get; set; }
     }
 }

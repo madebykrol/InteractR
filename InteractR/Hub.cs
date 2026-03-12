@@ -15,16 +15,28 @@ public class Hub : IHub
 {
     private readonly IResolver _resolver;
     private readonly INotificationTypeRegistry _typeRegistry;
+    private readonly INotificationMetaDataResolver _notificationMetaDataResolver;
     private readonly IHubOptions _options;
 
-    public Hub(IResolver resolver) : this(resolver, new NotificationTypeRegistry(), new HubOptions())
+    public Hub(IResolver resolver) : this(resolver, new NotificationTypeRegistry(), new NotificationMetaDataMap(), new HubOptions())
     {
     }
 
     public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, IHubOptions hubOptions)
+        : this(resolver, typeRegistry, new NotificationMetaDataMap(), hubOptions)
+    {
+    }
+
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver)
+        : this(resolver, typeRegistry, notificationMetaDataResolver, new HubOptions())
+    {
+    }
+
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver, IHubOptions hubOptions)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         _typeRegistry = typeRegistry ?? throw new ArgumentNullException(nameof(typeRegistry));
+        _notificationMetaDataResolver = notificationMetaDataResolver ?? throw new ArgumentNullException(nameof(notificationMetaDataResolver));
         _options = hubOptions ?? throw new ArgumentNullException(nameof(hubOptions));
     }
 
@@ -153,12 +165,30 @@ public class Hub : IHub
     }
 
     public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
-        => PublishInternal(notification, Guid.NewGuid().ToString(), cancellationToken);
+        => PublishInternal(notification, ResolveMetaData(notification, null), cancellationToken);
 
     public Task Publish<TNotification>(TNotification notification, string messageId, CancellationToken cancellationToken = default)
-        => PublishInternal(notification, messageId, cancellationToken);
+        => PublishInternal(notification, ResolveMetaData(notification, messageId), cancellationToken);
 
-    private async Task PublishInternal<TNotification>(TNotification notification, string messageId, CancellationToken cancellationToken)
+    private NotificationMetaData ResolveMetaData<TNotification>(TNotification notification, string messageIdOverride)
+    {
+        var metaData = _notificationMetaDataResolver.Resolve(notification) ?? new NotificationMetaData();
+
+        if (!string.IsNullOrWhiteSpace(messageIdOverride))
+        {
+            metaData.MessageId = messageIdOverride;
+        }
+
+        if (string.IsNullOrWhiteSpace(metaData.MessageId))
+        {
+            metaData.MessageId = Guid.NewGuid().ToString();
+        }
+
+        metaData.Headers ??= new Dictionary<string, string>();
+        return metaData;
+    }
+
+    private async Task PublishInternal<TNotification>(TNotification notification, NotificationMetaData metaData, CancellationToken cancellationToken)
     {
         var handlers = _resolver.ResolveNotificationHandlers<TNotification>();
         await PublishSequential(notification, cancellationToken, handlers);
@@ -166,7 +196,9 @@ public class Hub : IHub
         var address = _typeRegistry.ResolveAddress(typeof(TNotification));
         var envelope = new NotificationEnvelope
         {
-            MessageId = messageId,
+            MessageId = metaData.MessageId,
+            CausalityId = metaData.CausalityId,
+            Headers = metaData.Headers,
             Subject = address.Subject,
             Topic = address.Topic,
             Payload = System.Text.Json.JsonSerializer.Serialize(notification),

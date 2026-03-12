@@ -26,16 +26,29 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
     public NotificationAddress ResolveAddress(Type notificationType)
     {
         var attr = notificationType.GetCustomAttribute<NotificationRouteAttribute>();
-        var subject = notificationType.Namespace ?? string.Empty;
-        var topic = notificationType.Name;
         if (attr != null)
         {
+            var attrSubject = notificationType.Namespace ?? string.Empty;
+            var attrTopic = notificationType.Name;
+
             if(!string.IsNullOrEmpty(attr.Subject))
-                subject = attr.Subject;
+                attrSubject = attr.Subject;
 
             if(!string.IsNullOrEmpty(attr.Topic))
-                topic = attr.Topic;
+                attrTopic = attr.Topic;
+
+            if (!string.IsNullOrEmpty(attr.Subject) || !string.IsNullOrEmpty(attr.Topic))
+            {
+                return new NotificationAddress
+                {
+                    Subject = attrSubject,
+                    Topic = attrTopic
+                };
+            }
         }
+
+        var subject = notificationType.Namespace ?? string.Empty;
+        var topic = notificationType.Name;
 
         // We should resolve Subject and Topic based on conventions
 
@@ -46,9 +59,9 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
         var splitTypeName = SplitByCapitalLetters(notificationType.Name);
         if (splitTypeName.Length > 0)
         {
-            // The last word is the topic, and the rest is the subject
-            topic = splitTypeName[^1];
-            subject = string.Join("", splitTypeName, 0, splitTypeName.Length - 1);
+            // The first word is the Subject and the rest is the Topic
+            subject = splitTypeName[0].ToLower();
+            topic = string.Join(".", splitTypeName.Skip(1).Select(x => x.ToLower()));
         }
 
         return new NotificationAddress
@@ -66,7 +79,9 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
     private string[] SplitByCapitalLetters(string notificationTypeName)
     {
         // split by case and remove "Notification" or "Event" suffix if it exists
-        var words = Regex.Split(notificationTypeName, @"(?=\p{Lu})", RegexOptions.Compiled);
+        var words = Regex.Split(notificationTypeName, @"(?=\p{Lu})", RegexOptions.Compiled)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
 
         // If last word is "Notification" or "Event", remove it
         if (words.Length > 1 && (words[^1].Equals("Notification", StringComparison.OrdinalIgnoreCase) || words[^1].Equals("Event", StringComparison.OrdinalIgnoreCase)))
