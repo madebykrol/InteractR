@@ -100,7 +100,7 @@ public class NotificationTypeRegistryTests
     {
         _registry.Register<OrderPlacedEvent>();
 
-        var resolvedType = _registry.Resolve("order", "PLACED");
+        var resolvedType = _registry.Resolve("order", "placed");
 
         Assert.That(resolvedType, Is.EqualTo(typeof(OrderPlacedEvent)));
     }
@@ -110,7 +110,7 @@ public class NotificationTypeRegistryTests
     {
         _registry.Register<OrderLineItemCreatedEvent>();
 
-        var resolvedType = _registry.Resolve("Order", "Line.Item.Created");
+        var resolvedType = _registry.Resolve("Order", "line.item.created");
 
         Assert.That(resolvedType, Is.EqualTo(typeof(OrderLineItemCreatedEvent)));
     }

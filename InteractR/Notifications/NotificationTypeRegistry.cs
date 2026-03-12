@@ -84,6 +84,8 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
 
     private string[] SplitByCapitalLetters(string notificationTypeName)
     {
+        if (notificationTypeName == null)
+            return [];
         // split by case and remove "Notification" or "Event" suffix if it exists
         var words = Regex.Split(notificationTypeName, @"(?=\p{Lu})", RegexOptions.Compiled)
             .Where(x => !string.IsNullOrWhiteSpace(x))
