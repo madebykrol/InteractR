@@ -8,6 +8,7 @@ using NSubstitute;
 using NUnit.Framework;
 using System.Collections.Generic;
 using InteractR.Notifications;
+using Microsoft.Extensions.Logging;
 
 namespace InteractR.Tests;
 
@@ -19,6 +20,7 @@ public class HubTests
     private IResolver _handlerResolver;
     private IRegistrator _handlerRegistrator;
     private IInteractor<MockUseCase, IMockOutputPort> _mockInteractor;
+    private ILogger<Hub> _logger;
 
     [SetUp]
     public void Setup()
@@ -27,8 +29,9 @@ public class HubTests
         _handlerResolver = resolver;
         _mockInteractor = Substitute.For<IInteractor<MockUseCase, IMockOutputPort>>();
         _handlerRegistrator = resolver;
+        _logger = Substitute.For<ILogger<Hub>>();
 
-        _hub = new Hub(resolver, resolver.NotificationTypeRegistry, new HubOptions());
+        _hub = new Hub(resolver, resolver.NotificationTypeRegistry, new HubOptions(), _logger);
         _interactorHub = _hub;
     }
 
@@ -292,7 +295,7 @@ public class HubTests
             });
 
         var resolver = (SelfContainedResolver)_handlerResolver;
-        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions());
+        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions(), _logger);
 
         await hub.Publish(new CustomEvent
         {
@@ -319,7 +322,7 @@ public class HubTests
             });
 
         var resolver = (SelfContainedResolver)_handlerResolver;
-        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions());
+        var hub = new Hub(resolver, resolver.NotificationTypeRegistry, map, new HubOptions(), _logger);
 
         await hub.Publish(new CustomEvent
         {

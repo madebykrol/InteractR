@@ -13,15 +13,18 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
     public void Register(Type notificationType)
     {
         var address = ResolveAddress(notificationType);
-        var key = (address.Subject, address.Topic);
+        var key = (address.Subject.ToLowerInvariant(), address.Topic.ToLowerInvariant());
         _map.TryAdd(key, notificationType);
     }
 
     public void Register<TNotification>()
         => Register(typeof(TNotification));
 
-    public Type Resolve(string subject, string topic)
-        => _map.TryGetValue((subject, topic), out var type) ? type : null;
+    public Type Resolve(string subject, string topic) =>
+        _map.TryGetValue(
+            (subject?.ToLowerInvariant() ?? string.Empty, ToDotNotation(SplitByCapitalLetters(topic))), out var type)
+            ? type
+            : null;
 
     public NotificationAddress ResolveAddress(Type notificationType)
     {
@@ -31,10 +34,10 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
             var attrSubject = notificationType.Namespace ?? string.Empty;
             var attrTopic = notificationType.Name;
 
-            if(!string.IsNullOrEmpty(attr.Subject))
+            if (!string.IsNullOrEmpty(attr.Subject))
                 attrSubject = attr.Subject;
 
-            if(!string.IsNullOrEmpty(attr.Topic))
+            if (!string.IsNullOrEmpty(attr.Topic))
                 attrTopic = attr.Topic;
 
             if (!string.IsNullOrEmpty(attr.Subject) || !string.IsNullOrEmpty(attr.Topic))
@@ -61,7 +64,7 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
         {
             // The first word is the Subject and the rest is the Topic
             subject = splitTypeName[0].ToLower();
-            topic = string.Join(".", splitTypeName.Skip(1).Select(x => x.ToLower()));
+            topic = ToDotNotation(splitTypeName.Skip(1).ToArray());
         }
 
         return new NotificationAddress
@@ -70,6 +73,9 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
             Topic = topic
         };
     }
+
+    private static string ToDotNotation(string[] topic)
+        => string.Join(".", topic.Select(x => x.ToLower()));
 
     public IReadOnlyList<Type> NotificationSubscriptionTypes()
     {

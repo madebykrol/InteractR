@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace InteractR;
 
@@ -17,27 +18,26 @@ public class Hub : IHub
     private readonly INotificationTypeRegistry _typeRegistry;
     private readonly INotificationMetaDataResolver _notificationMetaDataResolver;
     private readonly IHubOptions _options;
+    private readonly ILogger<Hub> _logger;
 
-    public Hub(IResolver resolver) : this(resolver, new NotificationTypeRegistry(), new NotificationMetaDataMap(), new HubOptions())
+
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, IHubOptions hubOptions, ILogger<Hub> logger)
+        : this(resolver, typeRegistry, new NotificationMetaDataMap(), hubOptions, logger)
     {
     }
 
-    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, IHubOptions hubOptions)
-        : this(resolver, typeRegistry, new NotificationMetaDataMap(), hubOptions)
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver, ILogger<Hub> logger)
+        : this(resolver, typeRegistry, notificationMetaDataResolver, new HubOptions(), logger)
     {
     }
 
-    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver)
-        : this(resolver, typeRegistry, notificationMetaDataResolver, new HubOptions())
-    {
-    }
-
-    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver, IHubOptions hubOptions)
+    public Hub(IResolver resolver, INotificationTypeRegistry typeRegistry, INotificationMetaDataResolver notificationMetaDataResolver, IHubOptions hubOptions, ILogger<Hub> logger)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         _typeRegistry = typeRegistry ?? throw new ArgumentNullException(nameof(typeRegistry));
         _notificationMetaDataResolver = notificationMetaDataResolver ?? throw new ArgumentNullException(nameof(notificationMetaDataResolver));
         _options = hubOptions ?? throw new ArgumentNullException(nameof(hubOptions));
+        _logger = logger;
     }
 
     public Task<UseCaseResult> Execute<TUseCase, TOutputPort>(TUseCase useCase, TOutputPort outputPort)
@@ -145,9 +145,9 @@ public class Hub : IHub
 
             return result == ENotificationResponse.Failed ? EInletResponse.Nack : EInletResponse.Ack;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // On any failure, Nack the message so the broker can retry or dead-letter it
+            _logger.LogError(ex, ex.Message);
             return EInletResponse.Nack;
         }
     }

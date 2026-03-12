@@ -62,8 +62,15 @@ public sealed class NotificationMetaDataMap : INotificationMetaDataResolver
             ReadString(notification, notificationType, "EventId");
 
         var causalityId =
-            ReadString(notification, notificationType, "CausalityId") ??
-            ReadString(notification, notificationType, "CorrelationId");
+            ReadString(notification, notificationType, "CausalityId");
+
+        var correlationId =
+            ReadString(notification, notificationType, "CorrelationId") ??
+            ReadString(notification, notificationType, "DiagnosticsId");
+
+        var sentAt = DateTime.UtcNow;
+        DateTime.TryParse(ReadString(notification, notificationType, "SentAt"), out sentAt);
+
 
         var headers =
             ReadHeaders(notification, notificationType, "Headers") ??
@@ -73,6 +80,8 @@ public sealed class NotificationMetaDataMap : INotificationMetaDataResolver
         {
             MessageId = messageId,
             CausalityId = causalityId,
+            CorrelationId = correlationId,
+            SentAt = sentAt,
             Headers = headers
         };
     }

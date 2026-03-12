@@ -2,6 +2,7 @@ using System.Threading;
 using InteractR.Interactor;
 using InteractR.Resolver;
 using InteractR.Tests.Mocks;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -13,12 +14,14 @@ public class HubWithSelfContainedResolverTests
     private IInteractorHub _interactorHub;
     private SelfContainedResolver _handlerResolver;
     private IInteractor<MockUseCase, IMockOutputPort> _mockUseCaseInteractor;
+    private ILogger<Hub> _logger;
 
     [SetUp]
     public void Setup()
     {
         _handlerResolver = new SelfContainedResolver();
-        _interactorHub = new Hub(_handlerResolver, _handlerResolver.NotificationTypeRegistry, new HubOptions());
+        _logger = Substitute.For<ILogger<Hub>>();
+        _interactorHub = new Hub(_handlerResolver, _handlerResolver.NotificationTypeRegistry, new HubOptions(), _logger);
     }
 
     [Test]

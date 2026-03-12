@@ -85,6 +85,56 @@ public class NotificationTypeRegistryTests
         Assert.That(resolvedType, Is.EqualTo(typeof(OrderPlacedEvent)));
     }
 
+    [Test]
+    public void Resolve_Is_Case_Insensitive_For_Subject()
+    {
+        _registry.Register<OrderPlacedEvent>();
+
+        var resolvedType = _registry.Resolve("ORDER", "placed");
+
+        Assert.That(resolvedType, Is.EqualTo(typeof(OrderPlacedEvent)));
+    }
+
+    [Test]
+    public void Resolve_Is_Case_Insensitive_For_Topic()
+    {
+        _registry.Register<OrderPlacedEvent>();
+
+        var resolvedType = _registry.Resolve("order", "PLACED");
+
+        Assert.That(resolvedType, Is.EqualTo(typeof(OrderPlacedEvent)));
+    }
+
+    [Test]
+    public void Resolve_Is_Case_Insensitive_For_Mixed_Case_Subject_And_Topic()
+    {
+        _registry.Register<OrderLineItemCreatedEvent>();
+
+        var resolvedType = _registry.Resolve("Order", "Line.Item.Created");
+
+        Assert.That(resolvedType, Is.EqualTo(typeof(OrderLineItemCreatedEvent)));
+    }
+
+    [Test]
+    public void Resolve_Handles_Null_Subject()
+    {
+        _registry.Register<OrderPlacedEvent>();
+
+        var resolvedType = _registry.Resolve(null, "placed");
+
+        Assert.That(resolvedType, Is.Null);
+    }
+
+    [Test]
+    public void Resolve_Handles_Null_Topic()
+    {
+        _registry.Register<MockNotification>();
+
+        var resolvedType = _registry.Resolve("mock", null);
+
+        Assert.That(resolvedType, Is.EqualTo(typeof(MockNotification)));
+    }
+
     [NotificationRoute("billing", "captured")]
     private sealed class RoutedNotification;
 
