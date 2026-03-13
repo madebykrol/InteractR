@@ -112,7 +112,7 @@ await outlet.Publish(new NotificationEnvelope
 
 ## Consuming with the inlet
 
-The inlet requires an `INotificationTypeRegistry` populated with the notification types you want to subscribe to.
+The inlet requires an `INotificationTypeRegistry` populated with notification subscriptions (notification + handler type).
 
 ```csharp
 using InteractR.Notifications;
@@ -120,8 +120,8 @@ using InteractR.Notifications.RabbitMQ;
 using Microsoft.Extensions.Logging.Abstractions;
 
 var typeRegistry = new NotificationTypeRegistry();
-typeRegistry.Register<OrderCreatedEvent>();
-typeRegistry.Register<UserRegisteredIntegrationEvent>();
+typeRegistry.RegisterSubscription<OrderCreatedEvent, OrderCreatedHandler>();
+typeRegistry.RegisterSubscription<UserRegisteredIntegrationEvent, UserRegisteredIntegrationHandler>();
 
 var inlet = new RabbitMqNotificationInlet(
     options,

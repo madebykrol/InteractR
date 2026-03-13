@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <Version>10.0.0-preview4</Version>
+    <Version>10.0.0-preview5</Version>
     <PackageProjectUrl>https://github.com/madebykrol/InteractR</PackageProjectUrl>
     <RepositoryUrl>https://github.com/madebykrol/InteractR</RepositoryUrl>
     <AssemblyVersion>10.0.0.5</AssemblyVersion>

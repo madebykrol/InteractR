@@ -74,6 +74,17 @@ public class SelfContainedResolverTests
     }
 
     [Test]
+    public void Registering_NotificationHandler_Registers_Subscription_Type()
+    {
+        var notificationHandler = Substitute.For<INotificationHandler<MockNotification>>();
+        _resolver.Register(notificationHandler);
+
+        var subscriptionTypes = _resolver.NotificationTypeRegistry.NotificationSubscriptionTypes();
+
+        Assert.That(subscriptionTypes, Does.Contain(typeof(MockNotification)));
+    }
+
+    [Test]
     public void Can_Register_And_Resolve_NotificationOutlets()
     {
         var outlet = Substitute.For<INotificationOutlet>();

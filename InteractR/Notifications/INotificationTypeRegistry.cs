@@ -15,9 +15,20 @@ public interface INotificationTypeRegistry
     void Register(Type notificationType);
 
     /// <summary>
+    /// Registers a notification subscription for a notification type and handler type.
+    /// </summary>
+    void RegisterSubscription(Type notificationType, Type handlerType);
+
+    /// <summary>
     /// Registers a notification type and its resolved routing address.
     /// </summary>
     void Register<TNotification>();
+
+    /// <summary>
+    /// Registers a notification subscription for a notification type and handler type.
+    /// </summary>
+    void RegisterSubscription<TNotification, THandler>()
+        where THandler : INotificationHandler<TNotification>;
 
     /// <summary>
     /// Resolves the CLR type for the given Subject/Topic pair.

@@ -9,6 +9,7 @@ namespace InteractR.Notifications;
 public sealed class NotificationTypeRegistry : INotificationTypeRegistry
 {
     private readonly Dictionary<(string Subject, string Topic), Type> _map = new();
+    private readonly Dictionary<Type, HashSet<Type>> _subscriptions = new();
 
     public void Register(Type notificationType)
     {
@@ -19,6 +20,26 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
 
     public void Register<TNotification>()
         => Register(typeof(TNotification));
+
+    public void RegisterSubscription(Type notificationType, Type handlerType)
+    {
+        var handlerInterface = typeof(INotificationHandler<>).MakeGenericType(notificationType);
+        if (!handlerInterface.IsAssignableFrom(handlerType))
+        {
+            throw new InvalidOperationException($"Handler type {handlerType.Name} does not implement INotificationHandler<{notificationType.Name}>.");
+        }
+
+        Register(notificationType);
+
+        if (!_subscriptions.ContainsKey(notificationType))
+            _subscriptions[notificationType] = new HashSet<Type>();
+
+        _subscriptions[notificationType].Add(handlerType);
+    }
+
+    public void RegisterSubscription<TNotification, THandler>()
+        where THandler : INotificationHandler<TNotification>
+        => RegisterSubscription(typeof(TNotification), typeof(THandler));
 
     public Type Resolve(string subject, string topic) =>
         _map.TryGetValue(
@@ -79,7 +100,7 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
 
     public IReadOnlyList<Type> NotificationSubscriptionTypes()
     {
-        return _map.Values.ToList();
+        return _subscriptions.Keys.ToList();
     }
 
     private string[] SplitByCapitalLetters(string notificationTypeName)

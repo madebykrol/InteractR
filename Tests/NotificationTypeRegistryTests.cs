@@ -1,6 +1,8 @@
 using InteractR.Notifications;
 using InteractR.Tests.Mocks;
 using NUnit.Framework;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace InteractR.Tests;
 
@@ -86,6 +88,26 @@ public class NotificationTypeRegistryTests
     }
 
     [Test]
+    public void Register_Does_Not_Register_Subscription_Type()
+    {
+        _registry.Register<OrderPlacedEvent>();
+
+        var subscriptionTypes = _registry.NotificationSubscriptionTypes();
+
+        Assert.That(subscriptionTypes, Is.Empty);
+    }
+
+    [Test]
+    public void RegisterSubscription_Adds_Subscription_Type()
+    {
+        _registry.RegisterSubscription<OrderPlacedEvent, OrderPlacedEventHandler>();
+
+        var subscriptionTypes = _registry.NotificationSubscriptionTypes();
+
+        Assert.That(subscriptionTypes, Does.Contain(typeof(OrderPlacedEvent)));
+    }
+
+    [Test]
     public void Resolve_Is_Case_Insensitive_For_Subject()
     {
         _registry.Register<OrderPlacedEvent>();
@@ -141,4 +163,12 @@ public class NotificationTypeRegistryTests
     private sealed class UserCreatedNotification;
 
     private sealed class OrderLineItemCreatedEvent;
+
+    private sealed class OrderPlacedEventHandler : INotificationHandler<OrderPlacedEvent>
+    {
+        public Task<ENotificationResponse> Handle(OrderPlacedEvent notification, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(ENotificationResponse.Completed);
+        }
+    }
 }

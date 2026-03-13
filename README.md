@@ -130,6 +130,8 @@ InteractR supports:
 
 ### Define and register event handlers/outlets
 
+Register notification handlers with an explicit notification type:
+
 ```csharp
 public sealed class UserRegistered
 {
@@ -137,6 +139,7 @@ public sealed class UserRegistered
     
     public UserRegistered(Guid userId) => UserId = userId;
 }
+
 
 public sealed class WelcomeEmailHandler : INotificationHandler<UserRegistered>
 {
@@ -180,7 +183,7 @@ public sealed class BrokerInlet : INotificationInlet
 }
 
 var resolver = new SelfContainedResolver();
-resolver.Register(new WelcomeEmailHandler());
+resolver.Register<UserRegistered>(new WelcomeEmailHandler());
 resolver.Register(new BrokerOutlet());
 resolver.Register(new BrokerInlet());
 

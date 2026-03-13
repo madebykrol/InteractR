@@ -88,7 +88,7 @@ public class RabbitMqNotificationTransportTests
     public async Task Inlet_Consumes_Message_And_Forwards_Envelope_To_Ingress()
     {
         var registry = new NotificationTypeRegistry();
-        registry.Register<XqzInletOrderCreatedEvent>();
+        registry.RegisterSubscription<XqzInletOrderCreatedEvent, XqzInletOrderCreatedHandler>();
 
         var address = registry.ResolveAddress(typeof(XqzInletOrderCreatedEvent));
         var queueName = CreateQueueName("inlet-client", address.Subject, address.Topic);
@@ -271,5 +271,13 @@ public class RabbitMqNotificationTransportTests
     private sealed class XqzInletOrderCreatedEvent
     {
         public string Value { get; set; }
+    }
+
+    private sealed class XqzInletOrderCreatedHandler : INotificationHandler<XqzInletOrderCreatedEvent>
+    {
+        public Task<ENotificationResponse> Handle(XqzInletOrderCreatedEvent notification, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(ENotificationResponse.Completed);
+        }
     }
 }
