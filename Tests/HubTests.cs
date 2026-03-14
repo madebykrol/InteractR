@@ -228,6 +228,7 @@ public class HubTests
     {
         var handler = Substitute.For<INotificationHandler<MockNotification>>();
         _handlerRegistrator.Register(handler);
+        _hub.RegisterHandler<MockNotification, INotificationHandler<MockNotification>>();
 
         await _interactorHub.Publish(new MockNotification());
 
@@ -252,14 +253,20 @@ public class HubTests
         handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(ENotificationResponse.Completed));
         var outlet = Substitute.For<INotificationOutlet>();
+        string? messageId = null;
+        outlet.Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask)
+            .AndDoes(call => messageId = call.Arg<NotificationEnvelope>().MessageId);
+
         _handlerRegistrator.Register(handler);
         _handlerRegistrator.Register(outlet);
+        _hub.RegisterHandler<MockNotification, INotificationHandler<MockNotification>>();
 
-        // Publish in-process with known messageId
-        await _hub.Publish(new MockNotification(), "message-1");
+        await _hub.Publish(new MockNotification());
 
-        // Simulate broker echo via inlet with same messageId
-        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), "message-1"));
+        Assert.That(messageId, Is.Not.Null.And.Not.Empty);
+
+        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), messageId!));
         await _hub.OpenInlets();
 
         // Handler called for both the in-process publish and the inlet message
@@ -269,15 +276,15 @@ public class HubTests
     }
 
     [Test]
-    public async Task Publish_Uses_Provided_MessageId_For_NotificationEnvelope()
+    public async Task Publish_Assigns_MessageId_For_NotificationEnvelope()
     {
         var outlet = Substitute.For<INotificationOutlet>();
         _handlerRegistrator.Register(outlet);
 
-        await _hub.Publish(new MockNotification(), "message-1");
+        await _hub.Publish(new MockNotification());
 
         await outlet.Received(1).Publish(
-            Arg.Is<NotificationEnvelope>(x => x.MessageId == "message-1"),
+            Arg.Is<NotificationEnvelope>(x => !string.IsNullOrWhiteSpace(x.MessageId)),
             Arg.Any<CancellationToken>());
     }
 
@@ -309,7 +316,7 @@ public class HubTests
     }
 
     [Test]
-    public async Task Publish_Explicit_MessageId_Overrides_Resolved_MetaData()
+    public async Task Publish_Merges_Provided_Headers_With_Resolved_MetaData()
     {
         var outlet = Substitute.For<INotificationOutlet>();
         _handlerRegistrator.Register(outlet);
@@ -318,7 +325,11 @@ public class HubTests
             .Map<ICustomEvent>(x => new NotificationMetaData
             {
                 MessageId = x.Id,
-                CausalityId = x.CorrelationId
+                CausalityId = x.CorrelationId,
+                Headers = new Dictionary<string, string>
+                {
+                    ["meta"] = "1"
+                }
             });
 
         var resolver = (SelfContainedResolver)_handlerResolver;
@@ -328,10 +339,17 @@ public class HubTests
         {
             Id = "event-2",
             CorrelationId = "corr-2"
-        }, "override-id");
+        }, "custom", "created", new Dictionary<string, string>
+        {
+            ["request"] = "2"
+        });
 
         await outlet.Received(1).Publish(
-            Arg.Is<NotificationEnvelope>(x => x.MessageId == "override-id" && x.CausalityId == "corr-2"),
+            Arg.Is<NotificationEnvelope>(x =>
+                x.MessageId == "event-2" &&
+                x.CausalityId == "corr-2" &&
+                x.Headers["meta"] == "1" &&
+                x.Headers["request"] == "2"),
             Arg.Any<CancellationToken>());
     }
 
@@ -345,6 +363,7 @@ public class HubTests
         _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), "inlet-message"));
         _handlerRegistrator.Register(handler);
         _handlerRegistrator.Register(outlet);
+        _hub.RegisterHandler<MockNotification, INotificationHandler<MockNotification>>();
 
         await _interactorHub.OpenInlets();
 
@@ -358,15 +377,21 @@ public class HubTests
         var handler = Substitute.For<INotificationHandler<MockNotification>>();
         handler.Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(ENotificationResponse.Completed));
+        var outlet = Substitute.For<INotificationOutlet>();
+        string? messageId = null;
+        outlet.Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask)
+            .AndDoes(call => messageId = call.Arg<NotificationEnvelope>().MessageId);
+
         _handlerRegistrator.Register(handler);
+        _handlerRegistrator.Register(outlet);
+        _hub.RegisterHandler<MockNotification, INotificationHandler<MockNotification>>();
 
-        var messageId = "test-message-1";
+        await _hub.Publish(new MockNotification());
 
-        // Publish in-process with known messageId
-        await _hub.Publish(new MockNotification(), messageId);
+        Assert.That(messageId, Is.Not.Null.And.Not.Empty);
 
-        // Simulate out-of-process duplicate via inlet
-        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), messageId));
+        _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), messageId!));
         await _hub.OpenInlets();
 
         // Handler should be called for both the in-process publish and the inlet message

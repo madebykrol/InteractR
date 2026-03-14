@@ -8,7 +8,7 @@ namespace Notification.Consumer;
 
 internal sealed class Program
 {
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
 

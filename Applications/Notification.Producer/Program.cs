@@ -3,7 +3,6 @@ using InteractR.Notifications;
 using InteractR.Notifications.RabbitMQ;
 using InteractR.Resolver;
 using Microsoft.Extensions.Logging;
-using RabbitMQ.Client.Exceptions;
 
 namespace Notification.Producer;
 
@@ -37,13 +36,10 @@ internal sealed class Program
         await hub.OpenOutlets();
 
         await Publish(hub, args);
-
     }
-
 
     private static async Task Publish(Hub hub, string[] args)
     {
-
         var orderId = args.Length > 0 ? args[0] : Guid.NewGuid().ToString("N");
         var notification = new OrderPlacedNotification
         {

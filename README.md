@@ -55,15 +55,23 @@ public sealed class GreetUseCaseInteractor : IInteractor<GreetUseCase, IGreetUse
 ### 3) Register and execute
 
 ```csharp
+using Microsoft.Extensions.Logging;
+
 public sealed class ConsoleOutput : IGreetUseCaseOutputPort
 {
     public void DisplayGreeting(string message) => Console.WriteLine(message);
 }
 
+using var loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
+
 var resolver = new SelfContainedResolver();
 resolver.Register(new GreetUseCaseInteractor());
 
-var hub = new Hub(resolver);
+var hub = new Hub(
+    resolver,
+    resolver.NotificationTypeRegistry,
+    new HubOptions(),
+    loggerFactory.CreateLogger<Hub>());
 var output = new ConsoleOutput();
 
 await hub.Execute(new GreetUseCase("John Doe"), output);
@@ -133,6 +141,8 @@ InteractR supports:
 Register notification handlers with an explicit notification type:
 
 ```csharp
+using Microsoft.Extensions.Logging;
+
 public sealed class UserRegistered
 {
     public Guid UserId { get; }
@@ -182,12 +192,20 @@ public sealed class BrokerInlet : INotificationInlet
     }
 }
 
+using var loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
+
 var resolver = new SelfContainedResolver();
 resolver.Register<UserRegistered>(new WelcomeEmailHandler());
 resolver.Register(new BrokerOutlet());
 resolver.Register(new BrokerInlet());
 
-var hub = new Hub(resolver);
+var hub = new Hub(
+    resolver,
+    resolver.NotificationTypeRegistry,
+    new HubOptions(),
+    loggerFactory.CreateLogger<Hub>());
+
+hub.RegisterHandler<UserRegistered, WelcomeEmailHandler>();
 ```
 
 By convention, `UserRegistered` resolves to `Subject = "user"` and `Topic = "registered"`.
@@ -220,11 +238,15 @@ This will:
 You can inject `INotificationMetaDataResolver` directly into `Hub` and map your own event contracts (for example `IEvent`) to transport metadata.
 
 ```csharp
+using Microsoft.Extensions.Logging;
+
 public interface IEvent
 {
     string Id { get; }
     string CorrelationId { get; }
 }
+
+using var loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
 
 var resolver = new SelfContainedResolver();
 var metadataMap = new NotificationMetaDataMap()
@@ -238,7 +260,8 @@ var hub = new Hub(
     resolver,
     resolver.NotificationTypeRegistry,
     metadataMap,
-    new HubOptions());
+    new HubOptions(),
+    loggerFactory.CreateLogger<Hub>());
 ```
 
 This keeps domain events as plain CLR types and avoids adding InteractR-specific interfaces in domain/core.
@@ -246,7 +269,7 @@ This keeps domain events as plain CLR types and avoids adding InteractR-specific
 ### Start inbound ingestion
 
 ```csharp
-await hub.OpenNotificationInlets(cancellationToken);
+await hub.OpenInlets(cancellationToken);
 ```
 
 Inlets are source adapters. The hub ingests from all registered inlets, deserializes JSON payloads, resolves the event type from `Subject` and `Topic`, routes to in-process handlers, and does not re-publish out-of-process-origin messages to outlets.
