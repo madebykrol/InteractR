@@ -35,7 +35,8 @@ internal sealed class Program
             new HubOptions(),
             loggerFactory.CreateLogger<Hub>());
 
-        await hub.OpenNotificationInlets();
+        hub.RegisterHandler<OrderPlacedNotification, OrderPlacedHandler>();
+        await hub.OpenInlets();
 
         Console.WriteLine("Subscribed to OrderPlaced. Press Ctrl+C to exit.");
 

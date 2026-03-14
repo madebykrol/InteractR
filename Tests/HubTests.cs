@@ -260,7 +260,7 @@ public class HubTests
 
         // Simulate broker echo via inlet with same messageId
         _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), "message-1"));
-        await _hub.OpenNotificationInlets();
+        await _hub.OpenInlets();
 
         // Handler called for both the in-process publish and the inlet message
         await handler.Received(2).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
@@ -346,7 +346,7 @@ public class HubTests
         _handlerRegistrator.Register(handler);
         _handlerRegistrator.Register(outlet);
 
-        await _interactorHub.OpenNotificationInlets();
+        await _interactorHub.OpenInlets();
 
         await handler.Received(1).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());
         await outlet.DidNotReceive().Publish(Arg.Any<NotificationEnvelope>(), Arg.Any<CancellationToken>());
@@ -367,7 +367,7 @@ public class HubTests
 
         // Simulate out-of-process duplicate via inlet
         _handlerRegistrator.Register(new MockNotificationInlet(new MockNotification(), messageId));
-        await _hub.OpenNotificationInlets();
+        await _hub.OpenInlets();
 
         // Handler should be called for both the in-process publish and the inlet message
         await handler.Received(2).Handle(Arg.Any<MockNotification>(), Arg.Any<CancellationToken>());

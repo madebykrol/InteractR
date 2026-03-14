@@ -18,9 +18,9 @@ public class NotificationEnvelope
     public string CausalityId { get; set; }
     
     /// <summary>
-    /// JSON-serialized notification payload
+    /// The actual notification payload
     /// </summary>
-    public string Payload { get; set; }
+    public object Payload { get; set; }
     
     /// <summary>
     /// Represents the wide area of knowledge, the domain. In RabbitMQ this translates to an Exchange.

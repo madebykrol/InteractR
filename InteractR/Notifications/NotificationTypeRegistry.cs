@@ -10,12 +10,25 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
 {
     private readonly Dictionary<(string Subject, string Topic), Type> _map = new();
     private readonly Dictionary<Type, HashSet<Type>> _subscriptions = new();
+    private readonly Dictionary<Type, NotificationAddress> _typeToAddress = new();
 
     public void Register(Type notificationType)
     {
-        var address = ResolveAddress(notificationType);
-        var key = (address.Subject.ToLowerInvariant(), address.Topic.ToLowerInvariant());
-        _map.TryAdd(key, notificationType);
+        var address = ResolveAddressInternal(notificationType);
+        Register(notificationType, address.Subject, address.Topic);
+    }
+
+    public void Register(Type notificationType, string subject, string topic)
+    {
+        var normalizedSubject = NormalizeSubject(subject);
+        var normalizedTopic = NormalizeTopic(topic);
+
+        _map[(normalizedSubject, normalizedTopic)] = notificationType;
+        _typeToAddress[notificationType] = new NotificationAddress
+        {
+            Subject = normalizedSubject,
+            Topic = normalizedTopic
+        };
     }
 
     public void Register<TNotification>()
@@ -29,25 +42,42 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
             throw new InvalidOperationException($"Handler type {handlerType.Name} does not implement INotificationHandler<{notificationType.Name}>.");
         }
 
-        Register(notificationType);
-
         if (!_subscriptions.ContainsKey(notificationType))
+        {
             _subscriptions[notificationType] = new HashSet<Type>();
+        }
 
         _subscriptions[notificationType].Add(handlerType);
+
+        if (!_typeToAddress.ContainsKey(notificationType))
+        {
+            Register(notificationType);
+        }
     }
 
     public void RegisterSubscription<TNotification, THandler>()
         where THandler : INotificationHandler<TNotification>
         => RegisterSubscription(typeof(TNotification), typeof(THandler));
 
-    public Type Resolve(string subject, string topic) =>
-        _map.TryGetValue(
-            (subject?.ToLowerInvariant() ?? string.Empty, ToDotNotation(SplitByCapitalLetters(topic))), out var type)
+    public Type? Resolve(string subject, string topic)
+    {
+        var key = (NormalizeSubject(subject), NormalizeTopic(topic));
+        return _map.TryGetValue(key, out var type)
             ? type
             : null;
+    }
 
     public NotificationAddress ResolveAddress(Type notificationType)
+    {
+        if (_typeToAddress.TryGetValue(notificationType, out var explicitAddress))
+        {
+            return explicitAddress;
+        }
+
+        return ResolveAddressInternal(notificationType);
+    }
+
+    private static NotificationAddress ResolveAddressInternal(Type notificationType)
     {
         var attr = notificationType.GetCustomAttribute<NotificationRouteAttribute>();
         if (attr != null)
@@ -56,68 +86,94 @@ public sealed class NotificationTypeRegistry : INotificationTypeRegistry
             var attrTopic = notificationType.Name;
 
             if (!string.IsNullOrEmpty(attr.Subject))
+            {
                 attrSubject = attr.Subject;
+            }
 
             if (!string.IsNullOrEmpty(attr.Topic))
+            {
                 attrTopic = attr.Topic;
+            }
 
             if (!string.IsNullOrEmpty(attr.Subject) || !string.IsNullOrEmpty(attr.Topic))
             {
                 return new NotificationAddress
                 {
-                    Subject = attrSubject,
-                    Topic = attrTopic
+                    Subject = NormalizeSubject(attrSubject),
+                    Topic = NormalizeTopic(attrTopic)
                 };
             }
         }
 
-        var subject = notificationType.Namespace ?? string.Empty;
-        var topic = notificationType.Name;
-
-        // We should resolve Subject and Topic based on conventions
-
-        // First we split the notification type name into words based on capital letters
-        // For example, "UserCreatedNotification" would be split into ["User", "Created", "Notification"]
-        // Clean up the name by removing "Notification" or "Event" suffix if it exists
-
         var splitTypeName = SplitByCapitalLetters(notificationType.Name);
         if (splitTypeName.Length > 0)
         {
-            // The first word is the Subject and the rest is the Topic
-            subject = splitTypeName[0].ToLower();
-            topic = ToDotNotation(splitTypeName.Skip(1).ToArray());
+            var subject = splitTypeName[0];
+            var topic = ToDotNotation(splitTypeName.Skip(1).ToArray());
+
+            return new NotificationAddress
+            {
+                Subject = NormalizeSubject(subject),
+                Topic = NormalizeTopic(topic)
+            };
         }
 
         return new NotificationAddress
         {
-            Subject = subject,
-            Topic = topic
+            Subject = NormalizeSubject(notificationType.Namespace ?? string.Empty),
+            Topic = NormalizeTopic(notificationType.Name)
         };
     }
 
     private static string ToDotNotation(string[] topic)
-        => string.Join(".", topic.Select(x => x.ToLower()));
+        => string.Join(".", topic.Select(x => x.ToLowerInvariant()));
 
     public IReadOnlyList<Type> NotificationSubscriptionTypes()
     {
         return _subscriptions.Keys.ToList();
     }
 
-    private string[] SplitByCapitalLetters(string notificationTypeName)
+    private static string[] SplitByCapitalLetters(string notificationTypeName)
     {
         if (notificationTypeName == null)
+        {
             return [];
-        // split by case and remove "Notification" or "Event" suffix if it exists
+        }
+
         var words = Regex.Split(notificationTypeName, @"(?=\p{Lu})", RegexOptions.Compiled)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .ToArray();
 
-        // If last word is "Notification" or "Event", remove it
-        if (words.Length > 1 && (words[^1].Equals("Notification", StringComparison.OrdinalIgnoreCase) || words[^1].Equals("Event", StringComparison.OrdinalIgnoreCase)))
+        if (words.Length > 1 &&
+            (words[^1].Equals("Notification", StringComparison.OrdinalIgnoreCase) ||
+             words[^1].Equals("Event", StringComparison.OrdinalIgnoreCase)))
         {
             Array.Resize(ref words, words.Length - 1);
         }
 
         return words;
+    }
+
+    private static string NormalizeSubject(string subject)
+        => (subject ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static string NormalizeTopic(string topic)
+    {
+        if (string.IsNullOrWhiteSpace(topic))
+        {
+            return string.Empty;
+        }
+
+        var value = topic.Trim().Replace(" ", string.Empty, StringComparison.Ordinal);
+        if (value.Contains('.', StringComparison.Ordinal) || value.Contains('*', StringComparison.Ordinal) || value.Contains('#', StringComparison.Ordinal))
+        {
+            return value.Trim('.').ToLowerInvariant();
+        }
+
+        var words = Regex.Split(value, @"(?=\p{Lu})", RegexOptions.Compiled)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.ToLowerInvariant());
+
+        return string.Join('.', words);
     }
 }

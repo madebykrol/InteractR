@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using InteractR.Notifications;
 using Microsoft.Extensions.Logging;
@@ -72,12 +73,14 @@ public sealed class RabbitMqNotificationOutlet : INotificationOutlet, IAsyncDisp
             Headers = CreateHeaders(envelope.Headers)
         };
 
+        var payloadJson = SerializePayload(envelope.Payload);
+
         await _channel.BasicPublishAsync(
             exchange: exchangeName,
             routingKey: routingKey,
             mandatory: false,
             basicProperties: properties,
-            body: Encoding.UTF8.GetBytes(envelope.Payload ?? string.Empty),
+            body: Encoding.UTF8.GetBytes(payloadJson),
             cancellationToken: cancellationToken);
 
         _logger.LogDebug(
@@ -134,6 +137,17 @@ public sealed class RabbitMqNotificationOutlet : INotificationOutlet, IAsyncDisp
         }
 
         return messageHeaders;
+    }
+
+    private static string SerializePayload(object? payload)
+    {
+        return payload switch
+        {
+            null => string.Empty,
+            string json => json,
+            JsonElement element => element.GetRawText(),
+            _ => JsonSerializer.Serialize(payload)
+        };
     }
 
     private static string CreateRouteKeyFromTopic(string topic)

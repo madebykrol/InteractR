@@ -98,8 +98,8 @@ public sealed class SelfContainedResolver : IResolver, IRegistrator
             _notificationHandlers[notificationType] = new List<object>();
 
         _notificationHandlers[notificationType].Add(notificationHandler);
-        NotificationTypeRegistry.RegisterSubscription(notificationType, notificationHandler.GetType());
     }
+
 
     public void Register(INotificationOutlet outlet)
     {

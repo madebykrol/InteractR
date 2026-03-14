@@ -3,6 +3,7 @@ using InteractR.Notifications;
 using InteractR.Notifications.RabbitMQ;
 using InteractR.Resolver;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.Client.Exceptions;
 
 namespace Notification.Producer;
 
@@ -27,28 +28,21 @@ internal sealed class Program
 
         resolver.Register((INotificationOutlet)outlet);
 
-        await using var inlet = new RabbitMqNotificationInlet(
-            new RabbitMqNotificationOptions
-            {
-                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
-                UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "backend",
-                Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "backend",
-                ClientName = "notification-consumer",
-                Durable = true
-            },
-            loggerFactory.CreateLogger<RabbitMqNotificationInlet>(),
-            resolver.NotificationTypeRegistry);
-
-        resolver.Register((INotificationInlet)inlet);
-
         var hub = new Hub(
             resolver,
             resolver.NotificationTypeRegistry,
             new HubOptions(),
             loggerFactory.CreateLogger<Hub>());
 
-        await hub.OpenNotificationOutlets();
-        await hub.OpenNotificationInlets();
+        await hub.OpenOutlets();
+
+        await Publish(hub, args);
+
+    }
+
+
+    private static async Task Publish(Hub hub, string[] args)
+    {
 
         var orderId = args.Length > 0 ? args[0] : Guid.NewGuid().ToString("N");
         var notification = new OrderPlacedNotification
@@ -57,13 +51,9 @@ internal sealed class Program
             PlacedAtUtc = DateTime.UtcNow
         };
 
-        Console.ReadKey();
-
         await hub.Publish(notification);
 
         Console.WriteLine($"Published OrderPlaced notification for OrderId={orderId}");
-
-        Console.ReadKey();
     }
 }
 
